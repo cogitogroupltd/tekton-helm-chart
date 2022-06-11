@@ -1,0 +1,5 @@
+secret_ssh_key:
+secret_ssh_cred: ssh-key
+secret_docker_conf: docker-config
+docker_config_json: 
+configmap_kube_conf: kube-config

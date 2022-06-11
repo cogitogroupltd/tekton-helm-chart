@@ -1,0 +1,7 @@
+secret_ssh_cred: ssh-key
+secret_ssh_key:
+secret_slack_webhook: webhook-secret
+secret_slack_webhook_uri: 
+secret_docker_conf: docker-config
+docker_config_json: 
+configmap_kube_conf: kube-config

@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: stg-dummy-
+spec:
+  pipelineRef:
+    name: stg-dummy
+  workspaces:
+    - name: git-pvc
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: ssh-creds
+      secret:
+        secretName: "ssh-key"
+    - name: docker-creds-cm
+      secret:
+        secretName: "docker-config"
+    - name: kubeconfig
+      configMap:
+        name: "kube-config"

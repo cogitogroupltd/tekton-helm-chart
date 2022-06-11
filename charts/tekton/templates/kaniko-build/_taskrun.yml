@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  generateName: kaniko-taskrun-
+spec:
+  taskRef:
+    name: kaniko
+  params:
+  - name: IMAGE
+    value: "george7522/docker-anyconnect-vpn"
+  workspaces:
+  - name: source
+    persistentVolumeClaim:
+      claimName: git-clone-output
+  - name: dockerconfig
+    secret:
+      secretName: "{{ $.Values.secret_docker_conf }}"

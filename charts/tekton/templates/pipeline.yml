@@ -1,0 +1,92 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: stg-dummy
+spec:
+  workspaces:
+    - name: git-pvc
+    - name: ssh-creds
+    - name: docker-creds-cm
+    - name: kubeconfig
+  tasks:
+    - name: started-webhook
+      taskRef:
+        name: send-to-webhook-slack
+      params:
+      - name: {{ .Values.secret_slack_webhook }}
+        value: {{ .Values.secret_slack_webhook }}
+      - name: message
+        value: "Started"
+      - name: bot-name
+        value: "*TEKTON-stg-dummy-test*"
+      - name: icon-emoji
+        value: https://tekton.dev/favicons/favicon.ico
+    - name: clone-git-repo
+      taskRef:
+        name: git-clone
+      params:
+      - name: url
+        value: git@github.com:dockerised/docker-anyconnect-vpn.git
+      - name: revision
+        value: master
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - started-webhook
+    - name: build-and-push
+      taskRef:
+        name: kaniko
+      params:
+        - name: IMAGE
+          value: george7522/docker-anyconnect-vpn
+      runAfter:
+        - clone-git-repo
+      workspaces:
+      - name: source
+        workspace: git-pvc
+      - name: dockerconfig
+        workspace: docker-creds-cm
+    - name: mid-webhook
+      taskRef:
+        name: send-to-webhook-slack
+      params:
+      - name: {{ .Values.secret_slack_webhook }}
+        value: {{ .Values.secret_slack_webhook }}
+      - name: message
+        value: "Built and pushed"
+      - name: bot-name
+        value: "*TEKTON-stg-dummy-test*"
+      - name: icon-emoji
+        value: https://tekton.dev/favicons/favicon.ico
+      runAfter:
+        - build-and-push
+    - name: update-image
+      taskRef:
+        name: kubectl-restart-deployment
+      params:
+        - name: deployment
+          value: nginx-app
+        - name: namespace
+          value: default
+      runAfter:
+        - build-and-push
+      workspaces:
+        - name: kubeconfig-dir
+          workspace: kubeconfig
+    - name: end-webhook
+      taskRef:
+        name: send-to-webhook-slack
+      params:
+      - name: {{ .Values.secret_slack_webhook }}
+        value: {{ .Values.secret_slack_webhook }}
+      - name: message
+        value: "Finished"
+      - name: bot-name
+        value: "*TEKTON-stg-dummy-test*"
+      - name: icon-emoji
+        value: https://tekton.dev/favicons/favicon.ico
+      runAfter:
+        - update-image
