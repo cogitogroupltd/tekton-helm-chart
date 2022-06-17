@@ -23,7 +23,7 @@ spec:
         value: https://tekton.dev/favicons/favicon.ico
     - name: clone-git-repo
       taskRef:
-        name: git-clone
+        name: "{{ include "generic.fullname" . }}-git-clone"
       params:
       - name: url
         value: git@github.com:dockerised/docker-anyconnect-vpn.git

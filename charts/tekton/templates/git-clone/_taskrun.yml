@@ -4,7 +4,7 @@ metadata:
 kind: TaskRun
 spec:
   taskRef:
-    name: git-clone
+    name: dummy-build-git-clone
   params:
     - name: url
       value: https://github.com/cogitogroupltd/docker-anyconnect-vpn.git
