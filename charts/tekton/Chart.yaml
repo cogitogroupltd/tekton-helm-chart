@@ -1,5 +1,5 @@
 apiVersion: v2
-name: build
+name: pipeline
 description: Helm chart to deploy a standard service
 
 # A chart can be either an 'application' or a 'library' chart.

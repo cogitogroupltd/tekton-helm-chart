@@ -1,7 +1,10 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: stg-dummy
+  name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   workspaces:
     - name: git-pvc
@@ -13,22 +16,22 @@ spec:
       taskRef:
         name: send-to-webhook-slack
       params:
-      - name: {{ .Values.secret_slack_webhook }}
-        value: {{ .Values.secret_slack_webhook }}
+      - name: {{ $.Values.secret_slack_webhook }}
+        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "Started"
+        value: "INFO [{{ include "generic.fullname" $ }}] Starting"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
         value: https://tekton.dev/favicons/favicon.ico
     - name: clone-git-repo
       taskRef:
-        name: "{{ include "generic.fullname" . }}-git-clone"
+        name: "{{ include "generic.fullname" $ }}-git-clone"
       params:
       - name: url
-        value: git@github.com:dockerised/docker-anyconnect-vpn.git
-      - name: revision
-        value: master
+        value: {{ $value.git_source }} 
+      - name: {{ $value.git_specifier}}
+        value: {{ $value.git_branch_or_commit }}
       workspaces:
       - name: ssh-directory
         workspace: ssh-creds
@@ -41,7 +44,7 @@ spec:
         name: kaniko
       params:
         - name: IMAGE
-          value: george7522/docker-anyconnect-vpn
+          value: {{ $value.docker_registry }}
       runAfter:
         - clone-git-repo
       workspaces:
@@ -53,10 +56,10 @@ spec:
       taskRef:
         name: send-to-webhook-slack
       params:
-      - name: {{ .Values.secret_slack_webhook }}
-        value: {{ .Values.secret_slack_webhook }}
+      - name: {{ $.Values.secret_slack_webhook }}
+        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "Built and pushed"
+        value: "INFO [{{ include "generic.fullname" $ }}] Built and pushed"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -68,9 +71,9 @@ spec:
         name: kubectl-restart-deployment
       params:
         - name: deployment
-          value: nginx-app
+          value: {{ $value.deployment_name }}
         - name: namespace
-          value: default
+          value: {{ $value.deployment_namespace }}
       runAfter:
         - build-and-push
       workspaces:
@@ -80,13 +83,15 @@ spec:
       taskRef:
         name: send-to-webhook-slack
       params:
-      - name: {{ .Values.secret_slack_webhook }}
-        value: {{ .Values.secret_slack_webhook }}
+      - name: {{ $.Values.secret_slack_webhook }}
+        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "Finished"
+        value: "INFO [{{ include "generic.fullname" $ }}] Finished"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
         value: https://tekton.dev/favicons/favicon.ico
       runAfter:
         - update-image
+{{- end }}
+{{- end }}
