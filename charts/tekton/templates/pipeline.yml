@@ -19,7 +19,7 @@ spec:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] Starting"
+        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Starting"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -59,7 +59,7 @@ spec:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] Built and pushed"
+        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Built and pushed"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -86,12 +86,13 @@ spec:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] Finished"
+        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Finished"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
         value: https://tekton.dev/favicons/favicon.ico
       runAfter:
         - update-image
+---
 {{- end }}
 {{- end }}

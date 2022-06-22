@@ -1,0 +1,48 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.deployment_namespace }}
+spec:
+  params:
+  - name: git_specifier
+    description: The git revision
+    default: master
+  - name: url
+    description: The git repository url
+  - name: message
+    description: The message to print
+    default: This is the default message
+  - name: contenttype
+    description: The Content-Type of the event
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: {{ $value.name }}-$(uid)
+    spec:
+      pipelineRef:
+        name: {{ $value.name }}
+      workspaces:
+        - name: git-pvc
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+        - name: ssh-creds
+          secret:
+            secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_ssh_cred }}"
+        - name: docker-creds-cm
+          secret:
+            secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_docker_conf }}"
+        - name: kubeconfig
+          configMap:
+            name: "{{ include "generic.fullname" $ }}-{{ $.Values.configmap_kube_conf }}"
+---
+{{- end }}
+{{- end }}

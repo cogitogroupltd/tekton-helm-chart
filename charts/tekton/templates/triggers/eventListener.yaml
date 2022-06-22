@@ -1,0 +1,16 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ $value.name }}-listener
+  namespace: {{ $.Release.Namespace }}
+spec:
+  serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-triggers-sa"
+  triggers:
+  - bindings:
+      - ref: {{ $value.name }}
+    template:
+      ref: {{ $value.name }}
+{{- end }}
+{{- end }}

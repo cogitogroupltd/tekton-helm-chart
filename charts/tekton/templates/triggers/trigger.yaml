@@ -1,0 +1,24 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: Trigger
+metadata:
+  name: {{ $value.name }}
+spec:
+  interceptors:
+    - ref:
+        name: "cel"
+      params:
+        - name: "filter"
+          value: "header.match('X-GitHub-Event', 'pull_request')"
+        - name: "overlays"
+          value:
+            - key: extensions.truncated_sha
+              expression: "body.pull_request.head.sha.truncate(7)"
+  bindings:
+  - ref: {{ $value.name }}
+  template:
+    ref: {{ $value.name }}
+---
+{{- end }}
+{{- end }}

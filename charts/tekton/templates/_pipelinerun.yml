@@ -16,10 +16,10 @@ spec:
               storage: 1Gi
     - name: ssh-creds
       secret:
-        secretName: "dev-pipeline-ssh-key"
+        secretName: "template-pipeline-ssh-key"
     - name: docker-creds-cm
       secret:
-        secretName: "dev-pipeline-docker-config"
+        secretName: "template-pipeline-docker-config"
     - name: kubeconfig
       configMap:
-        name: "dev-pipeline-kube-config"
+        name: "template-pipeline-kube-config"

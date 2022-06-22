@@ -1,0 +1,20 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  params:
+  - name: git_revision
+    value: $(body.pull_request.head.sha)
+  - name: namespace
+    value: default
+  - name: git_source
+    value: $(body.repository.html_url)
+  - name: gitrepositoryname
+    value: $(body.repository.name)
+---
+{{- end }}
+{{- end }}
