@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: kaniko
+  name: "{{ include "generic.fullname" . }}-kaniko"
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/version: "0.5"

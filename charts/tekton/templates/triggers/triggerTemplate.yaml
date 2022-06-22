@@ -25,6 +25,14 @@ spec:
     spec:
       pipelineRef:
         name: {{ $value.name }}
+      params:
+      - name: message
+        value: $(tt.params.message)
+      - name: contenttype
+        value: $(tt.params.contenttype)
+      - name: revision
+        value: $(tt.params.git_specifier)
+
       workspaces:
         - name: git-pvc
           volumeClaimTemplate:

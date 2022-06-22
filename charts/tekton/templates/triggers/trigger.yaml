@@ -4,6 +4,7 @@ apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
 metadata:
   name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace}}
 spec:
   interceptors:
     - ref:
