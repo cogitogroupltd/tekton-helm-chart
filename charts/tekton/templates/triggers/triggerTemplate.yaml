@@ -23,6 +23,9 @@ spec:
     spec:
       pipelineRef:
         name: {{ $value.name }}
+      serviceAccountNames:
+        - taskName: update-image
+          serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
       params:
       - name: git_revision
         value: $(tt.params.git_revision)
@@ -38,7 +41,7 @@ spec:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 1Gi
+                  storage: 10Gi
         - name: ssh-creds
           secret:
             secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_ssh_cred }}"
