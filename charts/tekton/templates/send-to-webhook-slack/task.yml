@@ -32,6 +32,15 @@ spec:
   - name: git_revision_owner
     type: string
     description: The owner of the git revision
+  - name: helm_release_name
+    type: string
+    description: The name of the helm release for the pipeline
+  - name: pipeline_name
+    type: string
+    description: The name of the Tekton pipeline
+  - name: git_repository_name
+    type: string
+    description: The name of the git repository
   - name: bot-name
     type: string
     description: plain text message
@@ -45,7 +54,7 @@ spec:
     image: docker.io/curlimages/curl:7.70.0@sha256:031df77a11e5edded840bc761a845eab6e3c2edee22669fb8ad6d59484b6a1c4 #tag: 7.70.0
     script: |
       #!/usr/bin/env sh
-      MESSAGE=$(echo "$(date '+%Y-%m-%d-%H:%M%:S') ${LOG_LEVEL} [${GIT_REVISION_OWNER}] ${MESSAGE}" | sed -e 's/\"/\\\\"/g')
+      MESSAGE=$(echo "$(date '+%Y-%m-%d-%H:%M%:S') ${LOG_LEVEL} [${GIT_REVISION_OWNER}] [${HELM_RELEASE_NAME}] [${GIT_REPOSITORY_NAME}] [${PIPELINE_NAME}] ${MESSAGE}" | sed -e 's/\"/\\\\"/g')
       BOTNAME=$(echo "${BOTNAME}" | sed -e 's/\"/\\\\"/g')
       JSON="{\"text\": \"${MESSAGE}\", \"username\": \"${BOTNAME}\", \"icon_emoji\": \"${EMOJI}\"}"
       curl -X POST -H 'Content-Type: application/json' --data "${JSON}" "${URL}"
@@ -61,6 +70,12 @@ spec:
       value: $(params.bot-name)
     - name: GIT_REVISION_OWNER
       value: $(params.git_revision_owner)
+    - name: PIPELINE_NAME
+      value: $(params.pipeline_name)
+    - name: GIT_REPOSITORY_NAME
+      value: $(params.git_repository_name)
+    - name: HELM_RELEASE_NAME
+      value: $(params.helm_release_name)
     - name: EMOJI
       value: $(params.icon-emoji)
     - name: LOG_LEVEL

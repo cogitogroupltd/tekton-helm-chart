@@ -13,7 +13,7 @@ spec:
     value: default
   - name: git_source
     value: $(body.repository.html_url)
-  - name: gitrepositoryname
+  - name: git_repository_name
     value: $(body.repository.name)
   - name: git_revision_owner
     value: $(body.pull_request.head.user.login)

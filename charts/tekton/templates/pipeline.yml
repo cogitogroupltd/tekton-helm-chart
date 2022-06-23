@@ -11,6 +11,8 @@ spec:
     description: The git revision
   - name: git_revision_owner
     description: The owner of the git revision
+  - name: git_repository_name
+    description: The name of the git repository
   workspaces:
     - name: git-pvc
     - name: ssh-creds
@@ -25,8 +27,14 @@ spec:
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: git_revision_owner
         value: $(params.git_revision_owner)
+      - name: git_repository_name
+        value: $(params.git_repository_name)
       - name: message
-        value: "[{{ include "generic.fullname" $ }}] {{ $value.name }} Started"
+        value: "Started pipeline"
+      - name: helm_release_name
+        value: "{{ include "generic.fullname" $ }}"
+      - name: pipeline_name
+        value: "{{ $value.name }}"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -67,8 +75,14 @@ spec:
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: git_revision_owner
         value: $(params.git_revision_owner)
+      - name: git_repository_name
+        value: $(params.git_repository_name)
+      - name: helm_release_name
+        value: "{{ include "generic.fullname" $ }}"
+      - name: pipeline_name
+        value: "{{ $value.name }}"
       - name: message
-        value: "[{{ include "generic.fullname" $ }}] {{ $value.name }} Pushed {{ $value.docker_registry }}:$(params.git_revision)"
+        value: "Pushed {{ $value.docker_registry }}:$(params.git_revision)"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -96,8 +110,14 @@ spec:
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
       - name: git_revision_owner
         value: $(params.git_revision_owner)
+      - name: git_repository_name
+        value: $(params.git_repository_name)
+      - name: helm_release_name
+        value: "{{ include "generic.fullname" $ }}"
+      - name: pipeline_name
+        value: "{{ $value.name }}"
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Deployed {{ $value.deployment_namespace }}/{{ $value.deployment_name }}"
+        value: "Deployed {{ $value.deployment_namespace }}/{{ $value.deployment_name }}"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
