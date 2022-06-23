@@ -6,6 +6,11 @@ metadata:
   name: {{ $value.name }}
   namespace: {{ $.Release.Namespace }}
 spec:
+  params:
+  - name: git_revision
+    description: The git revision
+  - name: git_revision_owner
+    description: The owner of the git revision
   workspaces:
     - name: git-pvc
     - name: ssh-creds
@@ -18,8 +23,10 @@ spec:
       params:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
+      - name: git_revision_owner
+        value: $(params.git_revision_owner)
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Starting"
+        value: "[{{ include "generic.fullname" $ }}] {{ $value.name }} Started"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -30,8 +37,8 @@ spec:
       params:
       - name: url
         value: {{ $value.git_source }} 
-      - name: {{ $value.git_specifier}}
-        value: {{ $value.git_branch_or_commit }}
+      - name: {{ $value.git_specifier }}
+        value: $(params.git_revision)
       workspaces:
       - name: ssh-directory
         workspace: ssh-creds
@@ -41,10 +48,10 @@ spec:
         - started-webhook
     - name: build-and-push
       taskRef:
-        name: kaniko
+        name: "{{ include "generic.fullname" $ }}-kaniko"
       params:
         - name: IMAGE
-          value: {{ $value.docker_registry }}
+          value: {{ $value.docker_registry }}:$(params.git_revision)
       runAfter:
         - clone-git-repo
       workspaces:
@@ -58,8 +65,10 @@ spec:
       params:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
+      - name: git_revision_owner
+        value: $(params.git_revision_owner)
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Built and pushed"
+        value: "[{{ include "generic.fullname" $ }}] {{ $value.name }} Pushed {{ $value.docker_registry }}:$(params.git_revision)"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -85,8 +94,10 @@ spec:
       params:
       - name: {{ $.Values.secret_slack_webhook }}
         value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
+      - name: git_revision_owner
+        value: $(params.git_revision_owner)
       - name: message
-        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Finished"
+        value: "INFO [{{ include "generic.fullname" $ }}] {{ $value.name }} Deployed {{ $value.deployment_namespace }}/{{ $value.deployment_name }}"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji

@@ -7,16 +7,12 @@ metadata:
   namespace: {{ $.Release.deployment_namespace }}
 spec:
   params:
-  - name: git_specifier
+  - name: git_revision
     description: The git revision
-    default: master
+  - name: git_revision_owner
+    description: The owner of the git revision
   - name: url
     description: The git repository url
-  - name: message
-    description: The message to print
-    default: This is the default message
-  - name: contenttype
-    description: The Content-Type of the event
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
@@ -26,13 +22,10 @@ spec:
       pipelineRef:
         name: {{ $value.name }}
       params:
-      - name: message
-        value: $(tt.params.message)
-      - name: contenttype
-        value: $(tt.params.contenttype)
-      - name: revision
-        value: $(tt.params.git_specifier)
-
+      - name: git_revision
+        value: $(tt.params.git_revision)
+      - name: git_revision_owner
+        value: $(tt.params.git_revision_owner)
       workspaces:
         - name: git-pvc
           volumeClaimTemplate:

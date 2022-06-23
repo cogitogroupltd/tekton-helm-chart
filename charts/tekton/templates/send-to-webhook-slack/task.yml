@@ -25,6 +25,13 @@ spec:
   - name: message
     type: string
     description: plain text message
+  - name: log_level
+    type: string
+    description: plain text for log_level verbosity eg. INFO, WARNING, ERROR
+    default: 'INFO'
+  - name: git_revision_owner
+    type: string
+    description: The owner of the git revision
   - name: bot-name
     type: string
     description: plain text message
@@ -38,7 +45,7 @@ spec:
     image: docker.io/curlimages/curl:7.70.0@sha256:031df77a11e5edded840bc761a845eab6e3c2edee22669fb8ad6d59484b6a1c4 #tag: 7.70.0
     script: |
       #!/usr/bin/env sh
-      MESSAGE=$(echo "$(date '+%Y-%m-%d-%H:%M%:S') ${MESSAGE}" | sed -e 's/\"/\\\\"/g')
+      MESSAGE=$(echo "$(date '+%Y-%m-%d-%H:%M%:S') ${LOG_LEVEL} [${GIT_REVISION_OWNER}] ${MESSAGE}" | sed -e 's/\"/\\\\"/g')
       BOTNAME=$(echo "${BOTNAME}" | sed -e 's/\"/\\\\"/g')
       JSON="{\"text\": \"${MESSAGE}\", \"username\": \"${BOTNAME}\", \"icon_emoji\": \"${EMOJI}\"}"
       curl -X POST -H 'Content-Type: application/json' --data "${JSON}" "${URL}"
@@ -52,5 +59,9 @@ spec:
       value: $(params.message)
     - name: BOTNAME
       value: $(params.bot-name)
+    - name: GIT_REVISION_OWNER
+      value: $(params.git_revision_owner)
     - name: EMOJI
       value: $(params.icon-emoji)
+    - name: LOG_LEVEL
+      value: $(params.log_level)
