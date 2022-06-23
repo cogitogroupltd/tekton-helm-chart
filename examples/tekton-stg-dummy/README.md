@@ -1,12 +1,18 @@
 # Install cluster
 
+ToDo:
+- Move buildpush script to configMap
 
 unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind --image=rossgeorgiev/kind-node-arm64:v1.21.0 --config ~/.kube/cluster.yaml
 kind get kubeconfig > ~/.kube/config_kind ;
 export KUBECONFIG=~/.kube/config_kind
 
-
+# Install pipeline CRD
 kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.36.0/release.yaml
+# Install trigger CRDs
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml
+
 kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/latest/tekton-dashboard-release.yaml
 kubectl get pods --namespace tekton-pipelines --watch
 
