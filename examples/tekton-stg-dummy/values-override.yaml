@@ -10,6 +10,8 @@ pipelines:
     git_source: git@github.com:dockerised/docker-anyconnect-vpn.git
     git_specifier: revision #revision/commit
     git_revision: master #master/SHA256
+    trigger:
+      eventType: pull_request 
     # Build task
     docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task
@@ -19,7 +21,9 @@ pipelines:
     # Clone task
     git_source: git@github.com:dockerised/docker-anyconnect-vpn.git
     git_specifier: revision #revision/commit
-    git_revision: dev #master/SHA256
+    git_revision: master #master/SHA256
+    trigger:
+      eventType: push
     # Build task
     docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task

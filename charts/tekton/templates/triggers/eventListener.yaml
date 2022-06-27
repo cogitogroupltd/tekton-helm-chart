@@ -10,7 +10,23 @@ spec:
   triggers:
   - bindings:
       - ref: {{ $value.name }}
+  triggers:
+  - name: custom-resource-listener
+    interceptors:
+      - name: "only when PRs are opened"
+        ref:
+          name: "cel"
+        params:
+          {{ if eq $value.trigger.eventType "push" }}
+          - name: "filter"
+            value: "body.ref in ['refs/heads/{{ $value.git_revision }}']"
+          {{ end }}
+          {{ if eq $value.trigger.eventType "pull_request" }}
+          - name: "filter"
+            value: "body.action in ['opened', 'synchronize', 'reopened']"
+          {{ end }}
     template:
       ref: {{ $value.name }}
+---
 {{- end }}
 {{- end }}

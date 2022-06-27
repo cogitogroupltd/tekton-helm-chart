@@ -10,8 +10,10 @@ spec:
     - ref:
         name: "cel"
       params:
+      {{ if $value.trigger.eventType }}
         - name: "filter"
-          value: "header.match('X-GitHub-Event', 'pull_request')"
+          value: "header.match('X-GitHub-Event') == '{{ $value.trigger.eventType}}'"
+      {{ end }}
         - name: "overlays"
           value:
             - key: extensions.truncated_sha

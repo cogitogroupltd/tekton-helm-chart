@@ -46,7 +46,7 @@ helm upgrade --install dev ./charts/tekton --set secret_ssh_key="$(cat /Users/ge
 
 # Create a pipeline run
 kubectl create -f /Users/george/dev/cogitogroupltd/boilerplate/charts/tekton/templates/_pipelinerun.yml 
-#or using webhook listener
+#or using webhook listener, example payload.json supplied.
 kubectl cp payload.json $(kubectl get pod | grep -i nginx-app | awk '{print $1}'):/root/payload.json
 kubectl exec -it deploy/nginx-app -- curl -X POST http://el-dev-listener.default.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
 ```
