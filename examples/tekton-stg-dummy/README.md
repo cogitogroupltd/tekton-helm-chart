@@ -27,6 +27,7 @@ kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboar
 #kubectl get pods --namespace tekton-pipelines --watch
 
 # when complete
+sleep 3
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-dashboard
 kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
 
@@ -41,7 +42,8 @@ tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
 EOF
 
-helm upgrade --install dev ./charts/tekton --set secret_ssh_key="$(cat /Users/george/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-stg-dummy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --values charts/tekton/values-override.yml --debug
+kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
+helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat /Users/george/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-stg-dummy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --values charts/tekton/values-override.yml --debug
 
 
 # Create a pipeline run
