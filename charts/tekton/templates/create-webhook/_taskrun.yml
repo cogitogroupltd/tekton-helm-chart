@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: template-pipeline-create-webhook-run
+  namespace: default
+spec:
+  taskRef:
+    name: template-pipeline-create-webhook
+  params:
+  - name: GitHubOrg
+    value: "dockerised"
+  - name: GitHubUser
+    value: "dockerised"
+  - name: GitHubRepo
+    value: "docker-anyconnect-vpn"
+  - name: GitHubSecretName
+    value: github-secret
+  - name: GitHubAccessTokenKey
+    value: token
+  - name: GitHubSecretStringKey
+    value: secret
+  - name: ExternalDomain
+    value: testing.cogitogroup.co.uk
+#   If you are using github enterprise, provide a value for GitHubDomain
+#  - name: GitHubDomain
+#    value: git.corp.com
+  timeout: 1000s
+  # serviceAccountName: tekton-triggers-createwebhook

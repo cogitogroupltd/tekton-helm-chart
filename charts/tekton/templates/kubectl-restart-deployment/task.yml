@@ -21,6 +21,15 @@ spec:
     - name: namespace
       type: string
       default: "default"
+    - name: git_repository_name
+      type: string
+      default: "defaultgitrepositoryname"
+    - name: docker_registry
+      type: string
+      default: "defaultdockerregistry"
+    - name: tag
+      type: string
+      default: "master"
     - name: arch
       type: string
       default: "arm64"
@@ -35,5 +44,6 @@ spec:
         mv ./kubectl /usr/local/bin/kubectl
         chown root: /usr/local/bin/kubectl
         kubectl version
+        kubectl set image deployment.v1.apps/$(params.deployment) $(params.docker_registry)/$(params.git_repository_name):$(params.tag)
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)

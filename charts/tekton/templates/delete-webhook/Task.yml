@@ -1,0 +1,98 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "{{ include "generic.fullname" . }}-delete-webhook"
+  namespace: {{ .Release.Namespace }}
+spec:
+  description: >-
+    This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
+
+    The create-webhook Task will create a webhook and store the webhook ID in a configMap. 
+    The configmap is solely used by the delete-webhook task.
+    
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python
+    volumeMounts:
+    - name: github-secret
+      mountPath: /var/secret
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Deleting Webhook"
+      pip install kubernetes
+      
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import requests
+      import base64
+      import json
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # Retrieve webhook id from configmap
+      api_instance = client.CoreV1Api()
+      try: 
+        api_response = api_instance.read_namespaced_config_map(namespace="{{ .Release.Namespace }}", name=("%s" % os.getenv("$(params.GitHubSecretName)","{{ include "generic.fullname" . }}-create-webhook")))
+        webhook_id_b64=api_response.data["id"]
+        webhook_id=base64.b64decode(webhook_id_b64).decode("utf-8")
+        
+      except Exception as e:
+        print("Exception when calling CoreV1Api->read_namespaced_config_map: %s\n" % e)
+
+      # Send request to delete the webhook
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.delete("https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      else:
+        x = requests.delete("https://$(params.GitHubDomain)/api/v3/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      print("deleted webhook_id: %s" % webhook_id)
+      # Delete configMap containing webhook_id
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="{{ .Release.Namespace }}", label_selector='metadata.name={{ include "generic.fullname" . }}-create-webhook',timeout_seconds="2")
+          delete=True
+      except Exception as e:
+          print("No configMap found called {{ include "generic.fullname" . }}")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="{{ include "generic.fullname" . }}-create-webhook", namespace="{{ .Release.Namespace }}")  
+      EOF
+      
