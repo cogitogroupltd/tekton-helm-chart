@@ -42,6 +42,14 @@ spec:
               resources:
                 requests:
                   storage: 10Gi
+        - name: image-cache
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
         - name: ssh-creds
           secret:
             secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_ssh_cred }}"

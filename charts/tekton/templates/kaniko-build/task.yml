@@ -23,6 +23,8 @@ spec:
 
   params:
   - name: IMAGE
+    description: Name (reference) of the image to build and the tag
+  - name: DOCKER_REGISTRY
     description: Name (reference) of the image to build.
   - name: DOCKERFILE
     description: Path to the Dockerfile to build.
@@ -43,11 +45,27 @@ spec:
     description: Includes a docker `config.json`
     optional: true
     mountPath: /kaniko/.docker
+  - name: image-cache
+    description: directory for loading image caches across builds
+    optional: true
+    mountPath: /cache
   results:
   - name: IMAGE-DIGEST
     description: Digest of the image just built.
 
   steps:
+  - name: warm-cache
+    image: gcr.io/kaniko-project/warmer
+    args:
+    - --cache-dir=/cache
+    - --image=$(params.DOCKER_REGISTRY)
+    resources:
+      limits:
+        cpu: 2
+        memory: 4096Mi
+      requests:
+        cpu: 1
+        memory: 1048Mi
   - name: build-and-push
     workingDir: $(workspaces.source.path)
     image: $(params.BUILDER_IMAGE)
@@ -58,6 +76,8 @@ spec:
     - --destination=$(params.IMAGE)
     - --cache=true
     - --digest-file=/tekton/results/IMAGE-DIGEST
+    - --cache-dir=/cache
+    - --reproducible
     # kaniko assumes it is running as root, which means this example fails on platforms
     # that default to run containers as random uid (like OpenShift). Adding this securityContext
     # makes it explicit that it needs to run as root.

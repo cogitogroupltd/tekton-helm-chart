@@ -20,7 +20,7 @@ spec:
   - name: GitHubSecretStringKey
     value: secret
   - name: ExternalDomain
-    value: testing.cogitogroup.co.uk
+    value: tekton.cogitogroup.co.uk
 #   If you are using github enterprise, provide a value for GitHubDomain
 #  - name: GitHubDomain
 #    value: git.corp.com

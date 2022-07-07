@@ -9,12 +9,16 @@ spec:
   params:
   - name: git_revision
     description: The git revision
+    default: "master"
   - name: git_revision_owner
     description: The owner of the git revision
+    default: "git_owner_default_value"
   - name: git_repository_name
     description: The name of the git repository
+    default: "git_repository_name_default_value"
   workspaces:
     - name: git-pvc
+    - name: image-cache
     - name: ssh-creds
     - name: docker-creds-cm
     - name: kubeconfig
@@ -60,6 +64,8 @@ spec:
       params:
         - name: IMAGE
           value: {{ $value.docker_registry }}:$(params.git_revision)
+        - name: DOCKER_REGISTRY
+          value: {{ $value.docker_registry }}
       runAfter:
         - clone-git-repo
       workspaces:
@@ -95,6 +101,12 @@ spec:
       params:
         - name: deployment
           value: {{ $value.deployment_name }}
+        - name: tag
+          value: $(params.git_revision)
+        - name: git_repository_name
+          value: $(params.git_repository_name)
+        - name: docker_registry
+          value: {{ $value.docker_registry }}
         - name: namespace
           value: {{ $value.deployment_namespace }}
       runAfter:

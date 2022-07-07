@@ -7,6 +7,7 @@ ToDo:
 - Write up usage of example
 - Slack webhook uri - how to exclude
 - EventListener add secret
+- github_token - ignore if empty? Or prompt user for input if required
 
 
 

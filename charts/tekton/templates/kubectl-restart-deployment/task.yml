@@ -37,6 +37,7 @@ spec:
     - name: get-kubectl-and-run-command
       image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
       script: |
+        set -xe
         cd /tmp
         rm -f /usr/local/bin/kubectl
         curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
@@ -44,6 +45,6 @@ spec:
         mv ./kubectl /usr/local/bin/kubectl
         chown root: /usr/local/bin/kubectl
         kubectl version
-        kubectl set image deployment.v1.apps/$(params.deployment) $(params.docker_registry)/$(params.git_repository_name):$(params.tag)
+        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry):$(params.tag)"
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)
