@@ -26,6 +26,14 @@ spec:
       serviceAccountNames:
         - taskName: update-image
           serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
+        {{ if $value.custom.enabled -}}
+        {{- range $task := $value.custom.tasks }}
+        {{ if $task.clusterAdmin }} 
+        - taskName: {{ $task.name }}
+          serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
+        {{ end }}
+        {{- end }}
+        {{- end }}
       params:
       - name: git_revision
         value: $(tt.params.git_revision)

@@ -1,0 +1,55 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{ if $value.custom.enabled }}
+{{- range $task := $value.custom.tasks }}
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: {{ $task.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: CLI, kubectl
+    tekton.dev/displayName: "kubernetes actions"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+{{ if $task.description }}
+  description: {{ $task.description }}
+{{ end }}
+  workspaces:
+{{- with $task.workspaces -}}
+{{ $yaml := . }}
+{{- end }}
+  results:
+{{- with $task.results -}}
+{{ $yaml := . }}
+{{- end }}
+  params:
+{{- with $task.params -}}
+{{ $yaml := . }}
+{{- range $line := $yaml }}
+{{- range $key, $v := $line -}}
+{{ if eq $key "name" }}
+      - {{ $key }}: {{ $v }}
+{{- end -}}
+{{ if eq $key "description" }}
+        {{ $key }}: {{ $v | quote}}
+{{- end -}}
+{{ if eq $key "default" }}
+        {{ $key }}: {{ $v | quote}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+  steps:
+{{ with $task.steps }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

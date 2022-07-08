@@ -17,6 +17,39 @@ pipelines:
     # Deploy task
     deployment_name: nginx-app
     deployment_namespace: default
+    custom:
+      enabled: true
+      tasks:
+      - name: kubectl-get-pods
+        clusterAdmin: true
+        description: >-
+          This task does a kubectl get pods 
+          This task uses Incoming Webhooks of slack to send the message.
+        params:
+        - name: deployment
+          type: string
+          value: "defaultdeploy"
+        - name: tag
+          type: string
+          default: "master"
+          value: "defaulttag"
+        - name: arch
+          type: string
+          default: "arm64"
+          value: "defaultarch"
+        steps:
+        - name: run-kubectl-get
+          image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+          script: |
+            set -xe
+            cd /tmp
+            rm -f /usr/local/bin/kubectl
+            curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
+            chmod +x ./kubectl
+            mv ./kubectl /usr/local/bin/kubectl
+            chown root: /usr/local/bin/kubectl
+            kubectl get pods
+
   - name: dev
     # Clone task
     git_source: git@github.com:dockerised/docker-anyconnect-vpn.git
@@ -29,4 +62,31 @@ pipelines:
     # Deploy task
     deployment_name: nginx-app
     deployment_namespace: default
-
+    custom:
+      enabled: true
+      tasks:
+      - name: kubectl-get-podss
+        params:
+        - name: deployment
+          type: string
+          value: "defaultdeploy"
+        - name: tag
+          type: string
+          default: "master"
+          value: "defaulttag"
+        - name: arch
+          type: string
+          default: "arm64"
+          value: "defaultarch"
+        steps:
+        - name: run-kubectl-get
+          image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+          script: |
+            set -xe
+            cd /tmp
+            rm -f /usr/local/bin/kubectl
+            curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
+            chmod +x ./kubectl
+            mv ./kubectl /usr/local/bin/kubectl
+            chown root: /usr/local/bin/kubectl
+            kubectl get pods
