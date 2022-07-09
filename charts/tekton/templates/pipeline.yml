@@ -23,6 +23,30 @@ spec:
     - name: docker-creds-cm
     - name: kubeconfig
   tasks:
+{{ if $value.custom.enabled }}
+{{- range $task := $value.custom.tasks }}
+    - name: {{ $task.name }}
+      taskRef:
+        name: {{ $task.name }}
+{{ if $task.params }}
+      params:
+{{- with $task.params -}}
+{{ $yaml := . }}
+{{- range $line := $yaml }}
+{{- range $key, $v := $line -}}
+{{ if eq $key "name" }}
+      - {{ $key }}: {{ $v }}
+{{- end -}}
+{{ if eq $key "value" }}
+        {{ $key }}: {{ $v | quote}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+{{ with $value.tasks }}
     - name: started-webhook
       taskRef:
         name: send-to-webhook-slack
@@ -43,36 +67,14 @@ spec:
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
         value: https://tekton.dev/favicons/favicon.ico
-    - name: clone-git-repo
+    - name: {{ .clone.name }}
+{{ .clone | toYaml | indent 6}}
       taskRef:
         name: "{{ include "generic.fullname" $ }}-git-clone"
-      params:
-      - name: url
-        value: {{ $value.git_source }} 
-      - name: {{ $value.git_specifier }}
-        value: $(params.git_revision)
-      workspaces:
-      - name: ssh-directory
-        workspace: ssh-creds
-      - name: output
-        workspace: git-pvc
-      runAfter:
-        - started-webhook
-    - name: build-and-push
+    - name: {{ .build.name }}
+{{ .build | toYaml | indent 6}}
       taskRef:
         name: "{{ include "generic.fullname" $ }}-kaniko"
-      params:
-        - name: IMAGE
-          value: {{ $value.docker_registry }}:$(params.git_revision)
-        - name: DOCKER_REGISTRY
-          value: {{ $value.docker_registry }}
-      runAfter:
-        - clone-git-repo
-      workspaces:
-      - name: source
-        workspace: git-pvc
-      - name: dockerconfig
-        workspace: docker-creds-cm
     - name: mid-webhook
       taskRef:
         name: send-to-webhook-slack
@@ -139,3 +141,4 @@ spec:
 ---
 {{- end }}
 {{- end }}
+{{- end -}}

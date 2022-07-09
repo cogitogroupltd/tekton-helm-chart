@@ -4,14 +4,41 @@ secret_docker_conf: docker-config
 docker_config_json: 
 configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
+
 pipelines:
   - name: prod 
-    # Clone task
-    git_source: git@github.com:dockerised/docker-anyconnect-vpn.git
-    git_specifier: revision #revision/commit
-    git_revision: master #master/SHA256
     trigger:
-      eventType: pull_request 
+      eventType: pull_request
+      eventAction: "['opened','synchronize','reopened']"
+    tasks:
+      clone:
+        name: clone-git-repo
+        params:
+        - name: url
+          value: git@github.com:dockerised/docker-anyconnect-vpn.git
+        - name: revision #revision/commit
+          value: $(params.git_revision)
+        workspaces:
+        - name: ssh-directory
+          workspace: ssh-creds
+        - name: output
+          workspace: git-pvc
+        runAfter:
+        - started-webhook
+      build:  
+        name: build-and-push
+        params:
+          - name: IMAGE
+            value: george7522/docker-anyconnect-vpn:$(params.git_revision)
+          - name: DOCKER_REGISTRY
+            value: george7522
+        runAfter:
+          - clone-git-repo
+        workspaces:
+        - name: source
+          workspace: git-pvc
+        - name: dockerconfig
+          workspace: docker-creds-cm
     # Build task
     docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task
@@ -51,12 +78,38 @@ pipelines:
             kubectl get pods
 
   - name: dev
-    # Clone task
-    git_source: git@github.com:dockerised/docker-anyconnect-vpn.git
-    git_specifier: revision #revision/commit
-    git_revision: master #master/SHA256
     trigger:
+      git_revision: master
       eventType: push
+    tasks:
+      clone:
+        name: clone-git-repo
+        params:
+        - name: url
+          value: git@github.com:dockerised/docker-anyconnect-vpn.git
+        - name: revision #revision/commit
+          value: $(params.git_revision)
+        workspaces:
+        - name: ssh-directory
+          workspace: ssh-creds
+        - name: output
+          workspace: git-pvc
+        runAfter:
+        - started-webhook
+      build:  
+        name: build-and-push
+        params:
+          - name: IMAGE
+            value: george7522/docker-anyconnect-vpn:$(params.git_revision)
+          - name: DOCKER_REGISTRY
+            value: george7522
+        runAfter:
+          - clone-git-repo
+        workspaces:
+        - name: source
+          workspace: git-pvc
+        - name: dockerconfig
+          workspace: docker-creds-cm
     # Build task
     docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task
@@ -65,7 +118,11 @@ pipelines:
     custom:
       enabled: true
       tasks:
-      - name: kubectl-get-podss
+      - name: kubectl-get-pods
+        clusterAdmin: true
+        description: >-
+          This task does a kubectl get pods 
+          This task uses Incoming Webhooks of slack to send the message.
         params:
         - name: deployment
           type: string

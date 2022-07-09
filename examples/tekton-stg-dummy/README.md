@@ -4,6 +4,7 @@
 
 ToDo:
 - Move buildpush script to configMap
+- Create _taskRun output for custom-task
 - Write up usage of example
 - Slack webhook uri - how to exclude
 - EventListener add secret

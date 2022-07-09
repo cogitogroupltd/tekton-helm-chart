@@ -10,22 +10,27 @@ spec:
     - ref:
         name: "cel"
       params:
-        {{ if $value.trigger.eventType }}
+        {{ with $value.trigger }}
+        
         - name: "filter"
-          value: "header.match('X-GitHub-Event') == '{{ $value.trigger.eventType}}'"
-        {{ end }}
-        {{ if eq $value.trigger.eventType "push" }}
+          value: "header.match('X-GitHub-Event') == '{{ .eventType }}'"
+        {{ if eq .eventType "push" }}
         - name: "filter"
-          value: "body.ref in ['refs/heads/{{ $value.git_revision }}']"
+          value: "body.ref in ['refs/heads/{{ .git_revision }}']"
+        - name: "overlays"
+          value:
+            - key: extensions.truncated_sha
+              expression: "body.head_commit.id.truncate(7)"
         {{ end }}
-        {{ if eq $value.trigger.eventType "pull_request" }}
+        {{ if eq .eventType "pull_request" }}
         - name: "filter"
-          value: "body.action in ['opened', 'synchronize', 'reopened']"
-        {{ end }}
+          value: "body.action in {{ .eventAction }}"
         - name: "overlays"
           value:
             - key: extensions.truncated_sha
               expression: "body.pull_request.head.sha.truncate(7)"
+        {{ end }}
+        {{ end }}
   bindings:
   - ref: {{ $value.name }}
   template:

@@ -8,7 +8,12 @@ metadata:
 spec:
   params:
   - name: git_revision
+{{ if eq .eventType "pull_request" }}
     value: $(body.pull_request.head.sha)
+{{ end }}
+{{ if eq .eventType "push" }}
+    value: $(body.head_commit.id)
+{{ end }}
   - name: namespace
     value: default
   - name: git_source
@@ -16,7 +21,12 @@ spec:
   - name: git_repository_name
     value: $(body.repository.name)
   - name: git_revision_owner
+{{ if eq .eventType "pull_request" }}
     value: $(body.pull_request.head.user.login)
+{{ end }}
+{{ if eq .eventType "push" }}
+    value: $(body.pusher.name)
+{{ end }}
 ---
 {{- end }}
 {{- end }}
