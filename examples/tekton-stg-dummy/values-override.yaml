@@ -41,9 +41,26 @@ pipelines:
           workspace: git-pvc
         - name: dockerconfig
           workspace: docker-creds-cm
-    # Deploy task
-    deployment_name: nginx-app
-    deployment_namespace: default
+      deploy:  
+        name: update-image
+        params:
+          - name: deployment
+            value: nginx-app
+          - name: namespace
+            value: default
+          - name: tag
+            value: $(params.git_revision)
+          - name: git_repository_name
+            value: $(params.git_repository_name)
+          - name: docker_registry
+            value: george7522
+          - name: docker_repository
+            value: docker-anyconnect-vpn
+        runAfter:
+          - build-and-push
+        workspaces:
+          - name: kubeconfig-dir
+            workspace: kubeconfig
     custom:
       enabled: true
       tasks:
@@ -112,9 +129,26 @@ pipelines:
           workspace: git-pvc
         - name: dockerconfig
           workspace: docker-creds-cm
-    # Deploy task
-    deployment_name: nginx-app
-    deployment_namespace: default
+      deploy:  
+        name: update-image
+        params:
+          - name: deployment
+            value: nginx-app
+          - name: namespace
+            value: default
+          - name: tag
+            value: $(params.git_revision)
+          - name: git_repository_name
+            value: $(params.git_repository_name)
+          - name: docker_registry
+            value: george7522
+          - name: docker_repository
+            value: docker-anyconnect-vpn
+        runAfter:
+          - build-and-push
+        workspaces:
+          - name: kubeconfig-dir
+            workspace: kubeconfig
     custom:
       enabled: true
       tasks:
