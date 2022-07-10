@@ -97,27 +97,10 @@ spec:
         value: https://tekton.dev/favicons/favicon.ico
       runAfter:
         - build-and-push
-    - name: update-image
+    - name: {{ .deploy.name }}
+{{ .deploy | toYaml | indent 6}}
       taskRef:
         name: kubectl-restart-deployment
-      params:
-        - name: deployment
-          value: {{ $value.deployment_name }}
-        - name: tag
-          value: $(params.git_revision)
-        - name: git_repository_name
-          value: $(params.git_repository_name)
-        - name: docker_registry
-          value: {{ (index .build.params 0).value }}
-        - name: docker_repository
-          value: {{ (index .build.params 1).value }}
-        - name: namespace
-          value: {{ $value.deployment_namespace }}
-      runAfter:
-        - build-and-push
-      workspaces:
-        - name: kubeconfig-dir
-          workspace: kubeconfig
     - name: end-webhook
       taskRef:
         name: send-to-webhook-slack

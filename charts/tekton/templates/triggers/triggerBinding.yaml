@@ -8,6 +8,7 @@ metadata:
 spec:
   params:
   - name: git_revision
+{{ with $value.trigger }}
 {{ if eq .eventType "pull_request" }}
     value: $(body.pull_request.head.sha)
 {{ end }}
@@ -26,6 +27,7 @@ spec:
 {{ end }}
 {{ if eq .eventType "push" }}
     value: $(body.pusher.name)
+{{ end }}
 {{ end }}
 ---
 {{- end }}
