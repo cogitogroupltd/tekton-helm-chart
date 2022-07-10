@@ -27,6 +27,9 @@ spec:
     - name: docker_registry
       type: string
       default: "defaultdockerregistry"
+    - name: docker_repository
+      type: string
+      default: "defaultdockerrepo"
     - name: tag
       type: string
       default: "master"
@@ -45,6 +48,6 @@ spec:
         mv ./kubectl /usr/local/bin/kubectl
         chown root: /usr/local/bin/kubectl
         kubectl version
-        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry):$(params.tag)"
+        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)

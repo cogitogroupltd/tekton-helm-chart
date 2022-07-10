@@ -90,7 +90,7 @@ spec:
       - name: pipeline_name
         value: "{{ $value.name }}"
       - name: message
-        value: "Pushed {{ $value.docker_registry }}:$(params.git_revision)"
+        value: "Pushed {{ (index .build.params 0).value }}/{{ (index .build.params 1).value }}:$(params.git_revision)"
       - name: bot-name
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
@@ -108,7 +108,9 @@ spec:
         - name: git_repository_name
           value: $(params.git_repository_name)
         - name: docker_registry
-          value: {{ $value.docker_registry }}
+          value: {{ (index .build.params 0).value }}
+        - name: docker_repository
+          value: {{ (index .build.params 1).value }}
         - name: namespace
           value: {{ $value.deployment_namespace }}
       runAfter:

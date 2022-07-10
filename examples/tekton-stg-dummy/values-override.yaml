@@ -28,10 +28,12 @@ pipelines:
       build:  
         name: build-and-push
         params:
-          - name: IMAGE
-            value: george7522/docker-anyconnect-vpn:$(params.git_revision)
           - name: DOCKER_REGISTRY
             value: george7522
+          - name: DOCKER_REPOSITORY
+            value: docker-anyconnect-vpn
+          - name: DOCKER_IMAGE_TAG
+            value: $(params.git_revision)
         runAfter:
           - clone-git-repo
         workspaces:
@@ -39,8 +41,6 @@ pipelines:
           workspace: git-pvc
         - name: dockerconfig
           workspace: docker-creds-cm
-    # Build task
-    docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task
     deployment_name: nginx-app
     deployment_namespace: default
@@ -99,10 +99,12 @@ pipelines:
       build:  
         name: build-and-push
         params:
-          - name: IMAGE
-            value: george7522/docker-anyconnect-vpn:$(params.git_revision)
           - name: DOCKER_REGISTRY
             value: george7522
+          - name: DOCKER_REPOSITORY
+            value: docker-anyconnect-vpn
+          - name: DOCKER_IMAGE_TAG
+            value: $(params.git_revision)
         runAfter:
           - clone-git-repo
         workspaces:
@@ -110,8 +112,6 @@ pipelines:
           workspace: git-pvc
         - name: dockerconfig
           workspace: docker-creds-cm
-    # Build task
-    docker_registry: george7522/docker-anyconnect-vpn
     # Deploy task
     deployment_name: nginx-app
     deployment_namespace: default

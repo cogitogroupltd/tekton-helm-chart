@@ -22,9 +22,11 @@ spec:
     securely run a Docker daemon, such as a standard Kubernetes cluster.
 
   params:
-  - name: IMAGE
-    description: Name (reference) of the image to build and the tag
+  - name: DOCKER_IMAGE_TAG
+    description: Tag (reference) of the image to build 
   - name: DOCKER_REGISTRY
+    description: Name (reference) of the registry storing the image to build.
+  - name: DOCKER_REPOSITORY
     description: Name (reference) of the image to build.
   - name: DOCKERFILE
     description: Path to the Dockerfile to build.
@@ -58,7 +60,7 @@ spec:
     image: gcr.io/kaniko-project/warmer
     args:
     - --cache-dir=/cache
-    - --image=$(params.DOCKER_REGISTRY)
+    - --image=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY)
     resources:
       limits:
         cpu: 2
@@ -73,7 +75,7 @@ spec:
     - $(params.EXTRA_ARGS[*])
     - --dockerfile=$(params.DOCKERFILE)
     - --context=$(workspaces.source.path)/$(params.CONTEXT)  # The user does not need to care the workspace and the source.
-    - --destination=$(params.IMAGE)
+    - --destination=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY):$(params.DOCKER_IMAGE_TAG)
     - --cache=true
     - --digest-file=/tekton/results/IMAGE-DIGEST
     - --cache-dir=/cache
