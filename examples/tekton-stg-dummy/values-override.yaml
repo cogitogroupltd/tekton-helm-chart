@@ -124,16 +124,16 @@ pipelines:
     custom:
       enabled: true
       serviceAccounts:
-      - name: kubectl-get-pods
+      - name: kubectl-get-podss
         yaml: |-
           apiVersion: v1
           kind: ServiceAccount
           metadata:
             annotations:
               eks.amazonaws.com/role-arn: "arn:aws:iam::12345:role/production-task-execution-role"
-            name: kubectl-get-pods
+            name: kubectl-get-podss
       tasks:
-      - name: kubectl-get-pods
+      - name: kubectl-get-podss
         clusterAdmin: false
         description: >-
           This task does a kubectl get pods 
@@ -141,6 +141,10 @@ pipelines:
         podTemplate:
           nodeSelector:
             kubernetes.io/arch: arm64
+        volumes:
+        - name: sec
+          secret:
+            secretName: hello
         params:
         - name: deployment
           type: string
@@ -156,7 +160,12 @@ pipelines:
         steps:
         - name: run-kubectl-get
           image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+          volumeMounts:
+          - name: sec
+            mountPath: /mnt/sec
           script: |
+            echo "secret=$SECRET"
+            cat /mnt/sec/secret
             set -xe
             cd /tmp
             rm -f /usr/local/bin/kubectl
@@ -165,3 +174,4 @@ pipelines:
             mv ./kubectl /usr/local/bin/kubectl
             chown root: /usr/local/bin/kubectl
             kubectl get pods
+    

@@ -21,11 +21,23 @@ spec:
 {{ end }}
   workspaces:
 {{- with $task.workspaces -}}
-{{ $yaml := . }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+  volumes:
+{{- with $task.volumes -}}
+{{- toYaml . | nindent 2 }}
 {{- end }}
   results:
 {{- with $task.results -}}
-{{ $yaml := . }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+  stepTemplate:
+{{- with $task.stepTemplate -}}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+  sidecars:
+{{- with $task.sidecars -}}
+{{- toYaml . | nindent 2 }}
 {{- end }}
   params:
 {{- with $task.params -}}
