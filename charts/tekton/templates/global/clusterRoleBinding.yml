@@ -10,3 +10,30 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
+---
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{ if $value.custom.enabled }}
+{{- range $task := $value.custom.tasks }}
+{{ if $task.clusterAdmin }} 
+{{- range $sa :=  $value.custom.serviceAccounts }}
+{{ with $sa.yaml }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "cluster-administrator-{{ $task.name }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ $task.name }}"
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}

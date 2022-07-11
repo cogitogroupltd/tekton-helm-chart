@@ -21,17 +21,38 @@ spec:
     metadata:
       generateName: {{ $value.name }}-$(uid)
     spec:
+      {{ if $value.custom.enabled }}
+      {{- range $task := $value.custom.tasks -}}
+      taskRunSpecs:
+        - pipelineTaskName: {{ $task.name }}
+          taskServiceAccountName: {{ $task.name }}
+          taskPodTemplate:
+        {{ with $task.podTemplate}}
+{{ . | toYaml | indent 12}}
+        {{- end }}
+        {{- end }}
+        {{- end }}
       pipelineRef:
         name: {{ $value.name }}
       serviceAccountNames:
+        {{  with $value.tasks -}}
+        {{ if .deploy }}
         - taskName: update-image
           serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
-        {{ if $value.custom.enabled -}}
-        {{- range $task := $value.custom.tasks }}
-        {{ if $task.clusterAdmin }} 
+        {{ end -}}
+        {{- end -}}
+        {{- if $value.custom.enabled -}}
+        {{- range $task := $value.custom.tasks -}}
         - taskName: {{ $task.name }}
+        {{ if $value.custom.serviceAccounts }} 
           serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
-        {{ end }}
+        {{- else if $task.clusterAdmin -}}
+        {{- range $sa := $value.custom.serviceAccounts -}}
+        {{- with $sa.yaml -}}
+          serviceAccountName: {{ .metadata.name }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         {{- end }}
         {{- end }}
       params:
