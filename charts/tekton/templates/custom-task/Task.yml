@@ -35,6 +35,10 @@ spec:
 {{- with $task.stepTemplate -}}
 {{- toYaml . | nindent 2 }}
 {{- end }}
+  podTemplate:
+{{- with $task.podTemplate -}}
+{{- toYaml . | nindent 2 }}
+{{- end }}
   sidecars:
 {{- with $task.sidecars -}}
 {{- toYaml . | nindent 2 }}
