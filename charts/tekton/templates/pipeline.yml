@@ -67,10 +67,13 @@ spec:
         value: "*TEKTON-stg-dummy-test*"
       - name: icon-emoji
         value: https://tekton.dev/favicons/favicon.ico
+{{ if .clone }}
     - name: {{ .clone.name }}
 {{ .clone | toYaml | indent 6}}
       taskRef:
         name: "{{ include "generic.fullname" $ }}-git-clone"
+{{ end }}
+{{ if .build }}
     - name: {{ .build.name }}
 {{ .build | toYaml | indent 6}}
       taskRef:
@@ -97,6 +100,8 @@ spec:
         value: https://tekton.dev/favicons/favicon.ico
       runAfter:
         - build-and-push
+{{- end }}
+{{ if .deploy }}
     - name: {{ .deploy.name }}
 {{ .deploy | toYaml | indent 6}}
       taskRef:
@@ -123,6 +128,7 @@ spec:
         value: https://tekton.dev/favicons/favicon.ico
       runAfter:
         - update-image
+{{- end }}
 ---
 {{- end }}
 {{- end }}
