@@ -14,6 +14,14 @@ spec:
           resources:
             requests:
               storage: 1Gi
+    - name: image-cache
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
     - name: ssh-creds
       secret:
         secretName: "template-pipeline-ssh-key"
