@@ -45,7 +45,7 @@ tee "config.json" > /dev/null <<EOF
 EOF
 
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
-helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat /Users/george/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-stg-dummy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --values charts/tekton/values-override.yml --debug
+helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-stg-dummy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --values charts/tekton/values-override.yml --debug
 
 
 # Create a pipeline run
