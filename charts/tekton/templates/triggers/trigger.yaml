@@ -13,6 +13,10 @@ spec:
         {{ with $value.trigger }}
         - name: "filter"
           value: "header.match('X-GitHub-Event') == '{{ .eventType }}'"
+        {{- if .token }}
+        - name: "filter"
+          value: "'{{ $value.name }}-github-token'.compareSecret('token', '{{ .token | b64enc }}')"
+        {{- end }}
         {{ if eq .eventType "push" }}
         - name: "filter"
           value: "body.ref in ['refs/heads/{{ .git_revision }}']"
