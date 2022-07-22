@@ -6,12 +6,49 @@ metadata:
   name: {{ $value.name }}-listener
   namespace: {{ $.Release.Namespace }}
 spec:
-  serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-triggers-sa"
+{{- if $value.trigger }}
+{{- with $value.trigger }}
   triggers:
-  - bindings:
-      - ref: {{ $value.name }}
-    template:
-      ref: {{ $value.name }}
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: {{ $value.name }}-github-token
+                secretKey: token
+            - name: "eventTypes"
+              value: {{ .eventTypes }}
+{{- range $eventType := .eventTypes }}
+{{- if eq $eventType "pull_request" }}
+        - name: "only when specified PR action detected"
+          ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.action in {{ .eventActions }} "
+{{- end }}
+{{- end }}
+{{- end }}
+      bindings:
+        - ref: {{ $value.name }}
+      template:
+        ref: {{ $value.name }}
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-triggers-sa"
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"
 ---
 {{- end }}
 {{- end }}

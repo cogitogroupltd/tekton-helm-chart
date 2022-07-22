@@ -1,5 +1,6 @@
 {{- if .Values.pipelines }}
 {{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
 metadata:
@@ -9,27 +10,6 @@ spec:
   interceptors:
     - ref:
         name: "cel"
-      params:
-        {{ with $value.trigger }}
-        - name: "filter"
-          value: "header.match('X-GitHub-Event') == '{{ .eventType }}'"
-        {{ if eq .eventType "push" }}
-        - name: "filter"
-          value: "body.ref in ['refs/heads/{{ .git_revision }}']"
-        - name: "overlays"
-          value:
-            - key: extensions.truncated_sha
-              expression: "body.head_commit.id.truncate(7)"
-        {{ end }}
-        {{ if eq .eventType "pull_request" }}
-        - name: "filter"
-          value: "body.action in {{ .eventAction }}"
-        - name: "overlays"
-          value:
-            - key: extensions.truncated_sha
-              expression: "body.pull_request.head.sha.truncate(7)"
-        {{ end }}
-        {{ end }}
   bindings:
   - ref: {{ $value.name }}
   template:
@@ -37,3 +17,5 @@ spec:
 ---
 {{- end }}
 {{- end }}
+{{- end }}
+
