@@ -14,10 +14,12 @@ spec:
         - ref:
             name: "github"
           params:
+          {{- if .token }}
             - name: "secretRef"
               value:
                 secretName: {{ $value.name }}-github-token
                 secretKey: token
+          {{- end }}
             - name: "eventTypes"
               value: {{ .eventTypes }}
 {{- range $eventType := .eventTypes }}
