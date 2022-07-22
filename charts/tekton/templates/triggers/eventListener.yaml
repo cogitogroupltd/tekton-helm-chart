@@ -22,12 +22,15 @@ spec:
               value: {{ .eventTypes }}
 {{- range $eventType := .eventTypes }}
 {{- if eq $eventType "pull_request" }}
+{{- with $value.trigger }}
         - name: "only when specified PR action detected"
           ref:
             name: "cel"
           params:
             - name: "filter"
               value: "body.action in {{ .eventActions }} "
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
