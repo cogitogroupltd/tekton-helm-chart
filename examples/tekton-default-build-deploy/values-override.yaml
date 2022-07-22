@@ -10,7 +10,6 @@ pipelines:
     trigger:
       eventTypes: [ "pull_request" ]
       eventActions: "['opened','synchronize','reopened']"
-      token: 
     tasks:
       clone:
         name: clone-git-repo
