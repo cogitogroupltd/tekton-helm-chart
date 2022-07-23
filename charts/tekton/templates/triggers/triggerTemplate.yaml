@@ -35,11 +35,13 @@ spec:
       pipelineRef:
         name: {{ $value.name }}
       serviceAccountNames:
+        {{ if $value.tasks }}
         {{  with $value.tasks -}}
         {{ if .deploy }}
         - taskName: update-image
           serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
         {{ end -}}
+        {{- end -}}
         {{- end -}}
         {{- if $value.custom.enabled -}}
         {{- range $task := $value.custom.tasks -}}
