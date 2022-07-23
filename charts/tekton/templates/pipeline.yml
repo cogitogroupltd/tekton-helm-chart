@@ -29,6 +29,9 @@ spec:
     - name: {{ $task.name }}
       taskRef:
         name: {{ $task.name }}
+{{- if $task.runAfter }}
+      runAfter: {{ $task.runAfter }}
+{{- end }}
 {{ if $task.params }}
       params:
 {{- with $task.params -}}
@@ -54,6 +57,9 @@ spec:
     - name: {{ $customtask.name }}
       taskRef:
         name: {{ $customtask.name }}
+{{- if $customtask.runAfter }}
+      runAfter: {{ $customtask.runAfter }}
+{{- end }}
 {{- if $customtask.workspaces -}}
 {{- with $customtask.workspaces }}
       workspaces:
