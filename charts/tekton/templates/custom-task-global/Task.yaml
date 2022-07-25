@@ -1,5 +1,5 @@
-{{- if $.Values.globaltasks.enabled }}
-{{- range $globaltask := $.Values.globaltasks.tasks }}
+{{- if $.Values.taskdefinitions.enabled }}
+{{- range $globaltask := $.Values.taskdefinitions.tasks }}
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:

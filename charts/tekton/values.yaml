@@ -5,3 +5,6 @@ secret_slack_webhook_uri:
 secret_docker_conf: docker-config
 docker_config_json: 
 configmap_kube_conf: kube-config
+
+taskdefinitions:
+  enabled: true

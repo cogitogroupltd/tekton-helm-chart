@@ -52,8 +52,8 @@ spec:
 {{- end }}
 # / Custom Tasks
 # Global task calling
-{{ if $value.globaltasks }}
-{{- range $globaltask := $value.globaltasks }}
+{{ if $value.taskdefinitions }}
+{{- range $globaltask := $value.taskdefinitions }}
     - name: {{ $globaltask.name }}
       taskRef:
         name: {{ $globaltask.name }}

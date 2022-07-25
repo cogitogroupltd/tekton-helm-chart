@@ -5,7 +5,7 @@ docker_config_json:
 configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
 
-globaltasks:
+taskdefinitions:
   enabled: true
   tasks:
   - name: kubectl-get-podsss # must be unique across all tasks and custom tasks defined in this override values
@@ -43,7 +43,7 @@ pipelines:
       eventType: pull_request
       eventAction: "['opened','synchronize','reopened']"
       token: 
-    globaltasks:
+    taskdefinitions:
     - name: kubectl-get-podsss # must be unique across all tasks and custom tasks defined in this override values
       params:
       - name: deployment
@@ -52,7 +52,6 @@ pipelines:
         value: "BLOOO"
       - name: arch
         value: "BLAH"
-      # runAfter: [ "precheck" ]
     custom:
       enabled: true
       serviceAccounts:

@@ -23,7 +23,7 @@ spec:
     spec:
       pipelineRef:
         name: {{ $value.name }}
-      {{ if or $value.custom.enabled $.Values.globaltasks.enabled }}
+      {{ if or $value.custom.enabled $.Values.taskdefinitions.enabled }}
       taskRunSpecs:
       {{- range $task := $value.custom.tasks }}
         - pipelineTaskName: {{ $task.name }}
@@ -33,7 +33,7 @@ spec:
 {{ . | toYaml | indent 12}}
         {{- end }}
         {{- end }}
-      {{- range $globaltask := $.Values.globaltasks.tasks }}
+      {{- range $globaltask := $.Values.taskdefinitions.tasks }}
         - pipelineTaskName: {{ $globaltask.name }}
           taskServiceAccountName: {{ $globaltask.name }}
           taskPodTemplate:
@@ -42,8 +42,8 @@ spec:
         {{- end }}
         {{- end }}
         {{- end }}
-      {{ if or $value.custom.enabled $.Values.globaltasks.enabled }}
-      {{- range $globaltask := $.Values.globaltasks.tasks }}
+      {{ if or $value.custom.enabled $.Values.taskdefinitions.enabled }}
+      {{- range $globaltask := $.Values.taskdefinitions.tasks }}
         - pipelineTaskName: {{ $globaltask.name }}
           taskServiceAccountName: {{ $globaltask.name }}
           taskPodTemplate:

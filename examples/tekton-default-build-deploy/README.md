@@ -48,11 +48,11 @@ tee "config.json" > /dev/null <<EOF
 EOF
 
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
-helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-default-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --values charts/tekton/values-override.yml --debug
+helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-default-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --debug
 
 
 # Create a pipeline run
-kubectl create -f /Users/george/dev/cogitogroupltd/boilerplate/charts/tekton/templates/_pipelinerun.yml 
+kubectl create -f /Users/george/dev/cogitogroupltd/boilerplate/charts/tekton/templates/_pipelinerun.yaml 
 #or using webhook listener, example payload.json supplied.
 kubectl cp payload.json $(kubectl get pod | grep -i nginx-app | awk '{print $1}'):/root/payload.json
 kubectl exec -it deploy/nginx-app -- curl -X POST http://el-dev-listener.default.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
