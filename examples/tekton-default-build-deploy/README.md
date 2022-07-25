@@ -13,6 +13,9 @@ ToDo:
 - EventListener add secret
 - github_token - ignore if empty? Or prompt user for input if required
 - taskPodTemplate vs podTemplate - a taskPodTemplate overrides the podTemplate
+- Make eks.role.arn annotations make sense
+- Move resource defs from eventListener
+- Remove dependeny on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
 
 
 ```bash
