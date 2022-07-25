@@ -6,6 +6,9 @@ metadata:
 spec:
   pipelineRef:
     name: dev
+  taskRunSpecs:
+    - pipelineTaskName: kubectl-get-pods
+      taskServiceAccountName: kubectl-get-pods
   workspaces:
     - name: git-pvc
       volumeClaimTemplate:
