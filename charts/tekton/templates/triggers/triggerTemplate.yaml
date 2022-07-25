@@ -4,7 +4,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
   name: {{ $value.name }}
-  namespace: {{ $.Release.deployment_namespace }}
+  namespace: {{ $.Release.namespace }}
 spec:
   params:
   - name: git_revision
@@ -21,9 +21,11 @@ spec:
     metadata:
       generateName: {{ $value.name }}-$(uid)
     spec:
-      {{ if $value.custom.enabled }}
-      {{- range $task := $value.custom.tasks -}}
+      pipelineRef:
+        name: {{ $value.name }}
+      {{ if or $value.custom.enabled $.Values.globaltasks.enabled }}
       taskRunSpecs:
+      {{- range $task := $value.custom.tasks }}
         - pipelineTaskName: {{ $task.name }}
           taskServiceAccountName: {{ $task.name }}
           taskPodTemplate:
@@ -31,9 +33,31 @@ spec:
 {{ . | toYaml | indent 12}}
         {{- end }}
         {{- end }}
+      {{- range $globaltask := $.Values.globaltasks.tasks }}
+        - pipelineTaskName: {{ $globaltask.name }}
+          taskServiceAccountName: {{ $globaltask.name }}
+          taskPodTemplate:
+        {{ with $globaltask.podTemplate}}
+{{ . | toYaml | indent 12}}
         {{- end }}
-      pipelineRef:
-        name: {{ $value.name }}
+        {{- end }}
+        {{- end }}
+      {{ if or $value.custom.enabled $.Values.globaltasks.enabled }}
+      {{- range $globaltask := $.Values.globaltasks.tasks }}
+        - pipelineTaskName: {{ $globaltask.name }}
+          taskServiceAccountName: {{ $globaltask.name }}
+          taskPodTemplate:
+        {{ with $globaltask.podTemplate}}
+{{ . | toYaml | indent 12}}
+        {{- end }}
+      podTemplate:
+      {{- range $task := $value.custom.tasks -}}
+        {{ with $task.podTemplate}}
+{{ . | toYaml | indent 10}}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
       serviceAccountNames:
         {{ if $value.tasks }}
         {{  with $value.tasks -}}

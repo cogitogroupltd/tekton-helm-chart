@@ -1,8 +1,9 @@
-{{- range $task := .Values.customtasks }}
+{{- if $.Values.globaltasks.enabled }}
+{{- range $globaltask := $.Values.globaltasks.tasks }}
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: {{ $task.name }}
+  name: {{ $globaltask.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/version: "0.2"
@@ -13,35 +14,35 @@ metadata:
     tekton.dev/displayName: "kubernetes actions"
     tekton.dev/platforms: "linux/amd64"
 spec:
-{{ if $task.description }}
-  description: {{ $task.description }}
+{{ if $globaltask.description }}
+  description: {{ $globaltask.description }}
 {{ end }}
   volumes:
-{{- if $task.volumes -}}
-{{- with $task.volumes -}}
+{{- if $globaltask.volumes -}}
+{{- with $globaltask.volumes -}}
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
   results:
-{{- if $task.results -}}
-{{- with $task.results -}}
+{{- if $globaltask.results -}}
+{{- with $globaltask.results -}}
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
   stepTemplate:
-{{- if $task.stepTemplate -}}
-{{- with $task.stepTemplate -}}
+{{- if $globaltask.stepTemplate -}}
+{{- with $globaltask.stepTemplate -}}
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
   sidecars:
-{{- if $task.sidecars -}}
-{{- with $task.sidecars -}}
+{{- if $globaltask.sidecars -}}
+{{- with $globaltask.sidecars -}}
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
   params:
-{{- with $task.params -}}
+{{- with $globaltask.params -}}
 {{ $yaml := . }}
 {{- range $line := $yaml }}
 {{- range $key, $v := $line -}}
@@ -58,8 +59,9 @@ spec:
 {{- end -}}
 {{- end }}
   steps:
-{{ with $task.steps }}
+{{ with $globaltask.steps }}
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
 ---
+{{- end }}

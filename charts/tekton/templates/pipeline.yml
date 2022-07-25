@@ -52,23 +52,23 @@ spec:
 {{- end }}
 # / Custom Tasks
 # Global task calling
-{{ if $value.customtasks }}
-{{- range $customtask := $value.customtasks }}
-    - name: {{ $customtask.name }}
+{{ if $value.globaltasks }}
+{{- range $globaltask := $value.globaltasks }}
+    - name: {{ $globaltask.name }}
       taskRef:
-        name: {{ $customtask.name }}
-{{- if $customtask.runAfter }}
-      runAfter: {{ $customtask.runAfter }}
+        name: {{ $globaltask.name }}
+{{- if $globaltask.runAfter }}
+      runAfter: {{ $globaltask.runAfter }}
 {{- end }}
-{{- if $customtask.workspaces -}}
-{{- with $customtask.workspaces }}
+{{- if $globaltask.workspaces -}}
+{{- with $globaltask.workspaces }}
       workspaces:
 {{ . | toYaml | nindent 6}}
 {{- end }}
 {{- end }}
-{{ if $customtask.params }}
+{{ if $globaltask.params }}
       params:
-{{- with $customtask.params -}}
+{{- with $globaltask.params -}}
 {{ $yaml := . }}
 {{- range $line := $yaml }}
 {{- range $key, $v := $line -}}
