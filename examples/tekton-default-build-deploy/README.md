@@ -3,13 +3,16 @@
 
 
 ToDo:
+- Create Incubator project https://github.com/helm/community/blob/main/incubator.md
+- Write summary: manage DevOps pipelines from a single file
+- Remove hard coding in triggerTemplate by moving all buitl-in tasks to use an array same as calling a global custom task
 - Move buildpush script to configMap
 - Create _taskRun output for custom-task
 - Write up usage of example
 - Slack webhook uri - how to exclude
 - EventListener add secret
 - github_token - ignore if empty? Or prompt user for input if required
-
+- taskPodTemplate vs podTemplate - a taskPodTemplate overrides the podTemplate
 
 
 ```bash
