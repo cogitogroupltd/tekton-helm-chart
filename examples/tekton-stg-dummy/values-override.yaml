@@ -18,7 +18,7 @@ taskdefinitions:
         name: echo-pipeline-params
   tasks:
   - name: echo-pipeline-params # must be unique across all tasks and custom tasks defined in this override values
-    clusterAdmin: false
+    clusterAdmin: true
     description: >-
       This task is global so can be called in any pipelines 
     podTemplate:
@@ -41,9 +41,14 @@ taskdefinitions:
       image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
       script: |
         set -xe
-        echo "tag= $(params.tag)"
-        echo "arch= $(params.arch)"
-        echo "deploy= $(params.deployment)"
+        cd /tmp
+        rm -f /usr/local/bin/kubectl
+        curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
+        chmod +x ./kubectl
+        mv ./kubectl /usr/local/bin/kubectl
+        chown root:root /usr/local/bin/kubectl
+        kubectl get pods
+
 
 pipelines:
   - name: dev 

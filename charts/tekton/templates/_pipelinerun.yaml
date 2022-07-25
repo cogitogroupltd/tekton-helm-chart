@@ -9,6 +9,8 @@ spec:
   taskRunSpecs:
     - pipelineTaskName: kubectl-get-pods
       taskServiceAccountName: kubectl-get-pods
+    - pipelineTaskName: echo-pipeline-params
+      taskServiceAccountName: echo-pipeline-params
   workspaces:
     - name: git-pvc
       volumeClaimTemplate:
