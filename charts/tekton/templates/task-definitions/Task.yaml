@@ -29,6 +29,12 @@ spec:
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
+  workspaces:
+{{- if $globaltask.workspaces -}}
+{{- with $globaltask.workspaces -}}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
   stepTemplate:
 {{- if $globaltask.stepTemplate -}}
 {{- with $globaltask.stepTemplate -}}
@@ -47,13 +53,13 @@ spec:
 {{- range $line := $yaml }}
 {{- range $key, $v := $line -}}
 {{ if eq $key "name" }}
-      - {{ $key }}: {{ $v }}
+  - {{ $key }}: {{ $v }}
 {{- end -}}
 {{ if eq $key "description" }}
-        {{ $key }}: {{ $v | quote}}
+    {{ $key }}: {{ $v | quote}}
 {{- end -}}
 {{ if eq $key "default" }}
-        {{ $key }}: {{ $v | quote}}
+    {{ $key }}: {{ $v | quote}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
