@@ -95,6 +95,12 @@ taskdefinitions:
     - name: AWS_ECR_ACCOUNT_ID
       type: string
       default: ""
+    - name: AWS_ACCESS_KEY_ID
+      type: string
+      default: ""
+    - name: AWS_SECRET_ACCESS_KEY
+      type: string
+      default: ""
     - name: AWS_REGION
       type: string
       default: "us-east-1"
@@ -112,22 +118,21 @@ taskdefinitions:
       image: george7522/jenkins-agent:0.04
       workingDir: $(workspaces.git-pvc.path)
       volumeMounts:
-      - name: aws
-        mountPath: /root/.aws
       - name: docker
         mountPath: /var/run/docker.sock
+      env:
+      - name: AWS_ACCESS_KEY_ID
+        value: $(params.AWS_ACCESS_KEY_ID)
+      - name: AWS_SECRET_ACCESS_KEY
+        value: $(params.AWS_SECRET_ACCESS_KEY)
+      - name: AWS_REGION
+        value: $(params.AWS_REGION)
+      - name: AWS_ECR_ACCOUNT_ID
+        value: $(params.AWS_ECR_ACCOUNT_ID)
       script: |
         set -x 
         set -e
         export location="."
-        export SECRET_KEY="eks-$(params.stage).env"
-        export AWS_PROFILE=CC
-
-        # Set env vars from secrets manager
-        npm_string="NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id "npm/token" --query SecretString | jq '.' -r | jq '.NPM_TOKEN' -r)"
-        echo $npm_string >> "${SECRET_KEY}"
-        $(printf "$(grep -v '^#' "${SECRET_KEY}" | grep -v -e '^$' | awk '{var="export  "$0; print var}')")
-
         # Build image
         aws ecr get-login-password --region $(params.AWS_REGION) | docker login --username AWS --password-stdin "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com"
         docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
@@ -142,10 +147,6 @@ taskdefinitions:
     #       operator: "Equal"
     #       value: "infra"
     #       effect: "NoSchedule"
-    volumes:
-    - name: aws
-      secret:
-        secretName: aws
     workspaces:
     - name: git-pvc
       description: "git source volume"
@@ -164,25 +165,12 @@ taskdefinitions:
     - name: helm-deploy
       image: george7522/jenkins-agent:0.04
       workingDir: $(workspaces.git-pvc.path)
-      volumeMounts:
-      - name: aws
-        mountPath: /root/.aws
       script: | 
         set -e
         export stage="$(params.stage)"
         export app_short_name="$(params.app_short_name)"
         export docker_tag_version="$(params.docker_tag_version)"
-        export SECRET_KEY="eks-$(params.stage).env"
-        export AWS_PROFILE=CC
-
-        # Unset env vars if they're already set
-        aws secretsmanager get-secret-value --secret-id "${SECRET_KEY}" --query SecretString | jq '.' -r  | sed 's/__ENV_//g' > "${SECRET_KEY}"
-        unset $(grep -v '^#' "${SECRET_KEY}" | cut -f1 -d'=' | xargs)
-
-        # Set env vars from secrets manager
-        $(printf "$(grep -v '^#' "${SECRET_KEY}" | grep -v -e '^$' | awk '{var="export  "$0; print var}')")
-
-        cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
+        # cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
         set -x
         helm upgrade --install "${app_short_name}" ./examples/complete/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
         kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
@@ -238,6 +226,10 @@ pipelines:
         value: "683746102303"
       - name: AWS_REGION
         value: "us-east-1"
+      - name: AWS_ACCESS_KEY_ID
+        value: ""
+      - name: AWS_SECRET_ACCESS_KEY
+        value: ""
       - name: docker_tag_version
         value: $(params.git_revision)
       - name: stage
