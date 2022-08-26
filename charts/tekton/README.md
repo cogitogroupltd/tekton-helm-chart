@@ -13,10 +13,20 @@ ToDo:
 
 
 ```bash
+cd tekton-helm-chart/charts/tekton
+
 # Deploy Kind cluster (Mac M1)
-unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind --image=rossgeorgiev/kind-node-arm64:v1.21.0 --config ~/.kube/cluster.yaml
+unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind --image=rossgeorgiev/kind-node-arm64:v1.21.0 --config ./cluster.yaml
 kind get kubeconfig > ~/.kube/config_kind ;
 export KUBECONFIG=~/.kube/config_kind
+
+# Deploy Kind cluster
+kind create cluster --name kind ./cluster.yaml
+kind get kubeconfig > ~/.kube/config_kind ;
+export KUBECONFIG=~/.kube/config_kind
+
+# Wait for the nodes to become ready
+kubectl wait --for=condition=ready node kind-control-plane
 
 # Install pipeline CRD
 kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.36.0/release.yaml

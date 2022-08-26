@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: alpha-api-
+  namespace: tekton-pipelines
+spec:
+  pipelineRef:
+    name: prod
+  params:
+  - name: git_revision
+    value: master
+  taskRunSpecs:
+    - pipelineTaskName: ecr-build-push
+      taskServiceAccountName: ecr-build-push
+    - pipelineTaskName: helm-deploy
+      taskServiceAccountName: helm-deploy
+  workspaces:
+    - name: git-pvc
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: image-cache
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: ssh-creds
+      secret:
+        secretName: "pipelines-ssh-key"
+    - name: docker-creds-cm
+      secret:
+        secretName: "pipelines-docker-config"
+    - name: kubeconfig
+      configMap:
+        name: "pipelines-kube-config"
