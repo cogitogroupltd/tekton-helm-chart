@@ -1,6 +1,8 @@
-# Install Tekton
+# Helm chart for installing Tekton pipelines
 
+Install Tekton pipelines using Helm with all dependencies handled Triggers, Tasks, Pipelines,
 
+Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 ToDo:
 - Create Incubator project https://github.com/helm/community/blob/main/incubator.md
@@ -18,9 +20,38 @@ ToDo:
 - Remove dependeny on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
 
 
+Contents: 
+
+Features:
+- Values.yaml driven pipeline development 
+- Can run on OpenShift by altering task `securityContext`
+- Dynamic task generation
+- Least-privilege with isolated permissions for each task run
+- Create/Delete Github webhook tasks
+
+
+See `raw-yaml-output` directories for example outputted Kubernetes YAML 
+
+Successfully tested on:
+ - AWS EKS using NLB and ALB
+ - Kind [download](https://kind.sigs.k8s.io/)
+ - Rancher K3s 
+ - Google Kubernetes Engine (GKE)
+
+
+PreRequisties: 
+
+- Install Tekton
+
+
 ```bash
 # Deploy Kind cluster (Mac M1)
-unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind --image=rossgeorgiev/kind-node-arm64:v1.21.0 --config ~/.kube/cluster.yaml
+unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind --image=rossgeorgiev/kind-node-arm64:v1.21.0 
+kind get kubeconfig > ~/.kube/config_kind ;
+export KUBECONFIG=~/.kube/config_kind
+
+# Deploy Kind cluster (amd64)
+unset DOCKER_DEFAULT_PLATFORM; kind create cluster --name kind 
 kind get kubeconfig > ~/.kube/config_kind ;
 export KUBECONFIG=~/.kube/config_kind
 
@@ -37,11 +68,20 @@ kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboar
 # when complete
 sleep 3
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-dashboard
+
+# Launch the dashboard
 kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
+```
+
+- Navigate to Tekton Dashboard at https://localhost:8887
+
+## Install pipelines
 
 
-# Install sample app to deploy to with Tekton
-helm upgrade --install nginx ./charts/common --namespace default --values ./examples/common-nginx-helloworld/override-values.yaml
+
+- Example 1 - Clone, build and push docker image
+
+```bash
 
 # Deploy Tekton pipeline helm chart
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
@@ -53,10 +93,16 @@ EOF
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
 helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-default-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --debug
 
+```
 
+- 
+
+```bash
 # Create a pipeline run
 kubectl create -f /Users/george/dev/cogitogroupltd/boilerplate/charts/tekton/templates/_pipelinerun.yaml 
 #or using webhook listener, example payload.json supplied.
-kubectl cp payload.json $(kubectl get pod | grep -i nginx-app | awk '{print $1}'):/root/payload.json
-kubectl exec -it deploy/nginx-app -- curl -X POST http://el-dev-listener.default.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
+# Install sample app to deploy to with Tekton
+kubectl run debug-pod --image=nginx 
+kubectl cp payload.json debug-pod:/root/payload.json
+kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.default.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
 ```

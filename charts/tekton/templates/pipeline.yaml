@@ -13,6 +13,9 @@ spec:
   - name: git_revision_owner
     description: The owner of the git revision
     default: "git_owner_default_value"
+  - name: git_branch_name
+    description: The name of branch for the git revision
+    default: "git_branch_name_default_value"
   - name: git_repository_name
     description: The name of the git repository
     default: "git_repository_name_default_value"
@@ -22,13 +25,17 @@ spec:
     - name: ssh-creds
     - name: docker-creds-cm
     - name: kubeconfig
+  results:
+{{ with $value.results }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
   tasks:
 # Custom Tasks
 {{ if $value.custom.enabled }}
 {{- range $task := $value.custom.tasks }}
     - name: {{ $task.name }}
       taskRef:
-        name: {{ $task.name }}
+        name: {{ $task.taskRef.name }}
 {{- if $task.runAfter }}
       runAfter: {{ $task.runAfter }}
 {{- end }}
@@ -52,23 +59,23 @@ spec:
 {{- end }}
 # / Custom Tasks
 # Global task calling
-{{ if $value.taskdefinitions }}
-{{- range $globaltask := $value.taskdefinitions }}
-    - name: {{ $globaltask.name }}
+{{ if $value.taskcall }}
+{{- range $taskcall := $value.taskcall }}
+    - name: {{ $taskcall.name }}
       taskRef:
-        name: {{ $globaltask.name }}
-{{- if $globaltask.runAfter }}
-      runAfter: {{ $globaltask.runAfter }}
+        name: {{ $taskcall.taskRef.name }}
+{{- if $taskcall.runAfter }}
+      runAfter: {{ $taskcall.runAfter }}
 {{- end }}
-{{- if $globaltask.workspaces -}}
-{{- with $globaltask.workspaces }}
+{{- if $taskcall.workspaces -}}
+{{- with $taskcall.workspaces }}
       workspaces:
 {{ . | toYaml | nindent 6}}
 {{- end }}
 {{- end }}
-{{ if $globaltask.params }}
+{{ if $taskcall.params }}
       params:
-{{- with $globaltask.params -}}
+{{- with $taskcall.params -}}
 {{ $yaml := . }}
 {{- range $line := $yaml }}
 {{- range $key, $v := $line -}}
@@ -85,90 +92,6 @@ spec:
 {{- end -}}
 {{- end }}
 # / Global Task calling
-{{ with $value.tasks }}
-    - name: started-webhook
-      taskRef:
-        name: send-to-webhook-slack
-      params:
-      - name: {{ $.Values.secret_slack_webhook }}
-        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
-      - name: git_revision_owner
-        value: $(params.git_revision_owner)
-      - name: git_repository_name
-        value: $(params.git_repository_name)
-      - name: message
-        value: "Started pipeline"
-      - name: helm_release_name
-        value: "{{ include "generic.fullname" $ }}"
-      - name: pipeline_name
-        value: "{{ $value.name }}"
-      - name: bot-name
-        value: "*TEKTON-stg-dummy-test*"
-      - name: icon-emoji
-        value: https://tekton.dev/favicons/favicon.ico
-{{ if .clone }}
-    - name: {{ .clone.name }}
-{{ .clone | toYaml | indent 6}}
-      taskRef:
-        name: "{{ include "generic.fullname" $ }}-git-clone"
-{{ end }}
-{{ if .build }}
-    - name: {{ .build.name }}
-{{ .build | toYaml | indent 6}}
-      taskRef:
-        name: "{{ include "generic.fullname" $ }}-kaniko"
-    - name: mid-webhook
-      taskRef:
-        name: send-to-webhook-slack
-      params:
-      - name: {{ $.Values.secret_slack_webhook }}
-        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
-      - name: git_revision_owner
-        value: $(params.git_revision_owner)
-      - name: git_repository_name
-        value: $(params.git_repository_name)
-      - name: helm_release_name
-        value: "{{ include "generic.fullname" $ }}"
-      - name: pipeline_name
-        value: "{{ $value.name }}"
-      - name: message
-        value: "Pushed {{ (index .build.params 0).value }}/{{ (index .build.params 1).value }}:$(params.git_revision)"
-      - name: bot-name
-        value: "*TEKTON-stg-dummy-test*"
-      - name: icon-emoji
-        value: https://tekton.dev/favicons/favicon.ico
-      runAfter:
-        - build-and-push
-{{- end }}
-{{ if .deploy }}
-    - name: {{ .deploy.name }}
-{{ .deploy | toYaml | indent 6}}
-      taskRef:
-        name: kubectl-restart-deployment
-    - name: end-webhook
-      taskRef:
-        name: send-to-webhook-slack
-      params:
-      - name: {{ $.Values.secret_slack_webhook }}
-        value: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_slack_webhook }}"
-      - name: git_revision_owner
-        value: $(params.git_revision_owner)
-      - name: git_repository_name
-        value: $(params.git_repository_name)
-      - name: helm_release_name
-        value: "{{ include "generic.fullname" $ }}"
-      - name: pipeline_name
-        value: "{{ $value.name }}"
-      - name: message
-        value: "Deployed {{ $value.deployment_namespace }}/{{ $value.deployment_name }}"
-      - name: bot-name
-        value: "*TEKTON-stg-dummy-test*"
-      - name: icon-emoji
-        value: https://tekton.dev/favicons/favicon.ico
-      runAfter:
-        - update-image
-{{- end }}
 ---
-{{- end }}
 {{- end }}
 {{- end -}}

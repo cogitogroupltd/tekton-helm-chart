@@ -1,15 +1,16 @@
-{{- if .Values.pipelines }}
-{{- range $value := .Values.pipelines }}
+
 apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
-  name: {{ $value.name }}-listener
+  name: dev-listener
   namespace: {{ $.Release.Namespace }}
 spec:
+  triggers:
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
 {{- if $value.trigger }}
 {{- with $value.trigger }}
-  triggers:
-    - name: github-listener
+    - name: github-listener-{{ $value.name }}
       interceptors:
         - ref:
             name: "github"
@@ -17,11 +18,17 @@ spec:
           {{- if .token }}
             - name: "secretRef"
               value:
-                secretName: {{ $value.name }}-github-token
+                secretName: github-token
                 secretKey: token
           {{- end }}
             - name: "eventTypes"
               value: {{ .eventTypes }}
+            - name: "overlays"
+              value:
+              - key: truncated_sha
+                expression: "body.pull_request.head.sha.truncate(7)"
+              - key: branch_name
+                expression: "body.ref"
 {{- range $eventType := .eventTypes }}
 {{- if eq $eventType "pull_request" }}
 {{- with $value.trigger }}
@@ -33,6 +40,14 @@ spec:
               value: "body.action in {{ .eventActions }} "
 {{- end }}
 {{- end }}
+{{- if eq $eventType "push" }}
+{{- with $value.trigger }}
+        - name: "only when push detected to specified branch"
+          ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value:  {{ printf "body.ref in  %s" (toJson .git_revisions) | quote }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -40,6 +55,10 @@ spec:
         - ref: {{ $value.name }}
       template:
         ref: {{ $value.name }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
   resources:
     kubernetesResource:
       spec:
@@ -54,6 +73,3 @@ spec:
                   limits:
                     memory: "128Mi"
                     cpu: "500m"
----
-{{- end }}
-{{- end }}

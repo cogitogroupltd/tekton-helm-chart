@@ -6,5 +6,75 @@ secret_docker_conf: docker-config
 docker_config_json: 
 configmap_kube_conf: kube-config
 
+# Global webhook secret, this can be overriden in pipelines[0].trigger.token
+github_token: 
+
+# Define tasks in-line here to be used by taskcalls in multiple pipelines 
 taskdefinitions:
-  enabled: true
+  enabled: false
+
+# Call a task definition or a task dropped in at templates/
+taskcalls:
+
+
+# A custom task is declared and used on-the-fly inside a pipeline. Names for custom tasks must be unique across all pipelines.
+# Example custom task
+# pipelines:
+# - name: dummy
+#     custom:
+#       enabled: true
+#       serviceAccounts:
+#       - name: kubectl-get-pods
+#         yaml: |-
+#           apiVersion: v1
+#           kind: ServiceAccount
+#           metadata:
+#             name: kubectl-get-pods
+#           ---
+#           apiVersion: rbac.authorization.k8s.io/v1
+#           kind: ClusterRoleBinding
+#           metadata:
+#             name: "cluster-administrator-kubectl-get-pods"
+#           subjects:
+#             - kind: ServiceAccount
+#               name: "kubectl-get-pods"
+#               namespace: default
+#           roleRef:
+#             kind: ClusterRole
+#             name: cluster-admin
+#             apiGroup: rbac.authorization.k8s.io
+
+#       tasks:
+#       - name: kubectl-get-pods
+#         clusterAdmin: false
+#         description: >-
+#           This task does a kubectl get pods 
+#           This task uses Incoming Webhooks of slack to send the message.
+#         podTemplate:
+#           nodeSelector:
+#             kubernetes.io/arch: amd64
+#         params:
+#         - name: deployment
+#           type: string
+#           value: "defaultdeploy"
+#         - name: tag
+#           type: string
+#           default: "master"
+#           value: "defaulttag"
+#         - name: arch
+#           type: string
+#           default: "amd64"
+#           value: "defaultarch"
+#         steps:
+#         - name: run-kubectl-get
+#           image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+#           script: |
+#             set -xe
+#             cd /tmp
+#             rm -f /usr/local/bin/kubectl
+#             curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
+#             chmod +x ./kubectl
+#             mv ./kubectl /usr/local/bin/kubectl
+#             chown root:root /usr/local/bin/kubectl
+#             kubectl get pods
+    

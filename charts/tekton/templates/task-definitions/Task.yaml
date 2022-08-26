@@ -49,25 +49,12 @@ spec:
 {{- end }}
   params:
 {{- with $globaltask.params -}}
-{{ $yaml := . }}
-{{- range $line := $yaml }}
-{{- range $key, $v := $line -}}
-{{ if eq $key "name" }}
-  - {{ $key }}: {{ $v }}
-{{- end -}}
-{{ if eq $key "description" }}
-    {{ $key }}: {{ $v | quote}}
-{{- end -}}
-{{ if eq $key "default" }}
-    {{ $key }}: {{ $v | quote}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{ . | toYaml | nindent 2}}
 {{- end }}
   steps:
 {{ with $globaltask.steps }}
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- end }}
 ---
+{{- end }}
 {{- end }}

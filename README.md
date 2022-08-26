@@ -88,9 +88,8 @@ docker_auth=$(echo -n george7522:somepass! | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
 EOF
-
 kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
-helm upgrade --install dev ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)"  --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-default-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --debug
+helm upgrade --install pipelines ./charts/tekton --namespace tekton-pipelines --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-ecr-build-deploy/value-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} 
 
 ```
 

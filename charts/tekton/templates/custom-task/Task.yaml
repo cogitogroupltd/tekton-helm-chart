@@ -37,6 +37,12 @@ spec:
 {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
+  workspaces:
+{{- if $task.workspaces -}}
+{{- range $workspace := $task.workspaces }}
+  - name: {{ $workspace.name }}
+{{- end }}
+{{- end }}
   sidecars:
 {{- if $task.sidecars -}}
 {{- with $task.sidecars -}}
@@ -64,8 +70,8 @@ spec:
 {{ with $task.steps }}
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

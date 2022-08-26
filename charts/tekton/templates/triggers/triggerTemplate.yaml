@@ -1,10 +1,11 @@
 {{- if .Values.pipelines }}
 {{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
   name: {{ $value.name }}
-  namespace: {{ $.Release.namespace }}
+  namespace: {{ $.Release.deployment_namespace }}
 spec:
   params:
   - name: git_revision
@@ -12,6 +13,8 @@ spec:
   - name: git_revision_owner
     description: The owner of the git revision
   - name: git_repository_name
+    description: The name of the git repository
+  - name: git_branch_name
     description: The name of the git repository
   - name: url
     description: The git repository url
@@ -21,11 +24,9 @@ spec:
     metadata:
       generateName: {{ $value.name }}-$(uid)
     spec:
-      pipelineRef:
-        name: {{ $value.name }}
-      {{ if or $value.custom.enabled $.Values.taskdefinitions.enabled }}
+      {{ if $value.custom.enabled }}
+      {{- range $task := $value.custom.tasks -}}
       taskRunSpecs:
-      {{- range $task := $value.custom.tasks }}
         - pipelineTaskName: {{ $task.name }}
           taskServiceAccountName: {{ $task.name }}
           taskPodTemplate:
@@ -33,31 +34,14 @@ spec:
 {{ . | toYaml | indent 12}}
         {{- end }}
         {{- end }}
-      {{- range $globaltask := $.Values.taskdefinitions.tasks }}
-        - pipelineTaskName: {{ $globaltask.name }}
-          taskServiceAccountName: {{ $globaltask.name }}
-          taskPodTemplate:
-        {{ with $globaltask.podTemplate}}
-{{ . | toYaml | indent 12}}
         {{- end }}
-        {{- end }}
-        {{- end }}
-      {{ if or $value.custom.enabled $.Values.taskdefinitions.enabled }}
-      {{- range $globaltask := $.Values.taskdefinitions.tasks }}
-        - pipelineTaskName: {{ $globaltask.name }}
-          taskServiceAccountName: {{ $globaltask.name }}
-          taskPodTemplate:
-        {{ with $globaltask.podTemplate}}
-{{ . | toYaml | indent 12}}
-        {{- end }}
-      podTemplate:
-      {{- range $task := $value.custom.tasks -}}
-        {{ with $task.podTemplate}}
-{{ . | toYaml | indent 10}}
-        {{- end }}
-        {{- end }}
-        {{- end }}
-        {{- end }}
+      pipelineRef:
+        name: {{ $value.name }}
+      # podTemplate:
+      #   securityContext:
+      #     runAsNonRoot: true
+      #     runAsUser: 1000920000
+      #     fsGroup: 1000920000
       serviceAccountNames:
         {{ if $value.tasks }}
         {{  with $value.tasks -}}
@@ -68,16 +52,10 @@ spec:
         {{- end -}}
         {{- end -}}
         {{- if $value.custom.enabled -}}
-        {{- range $task := $value.custom.tasks -}}
+        {{- range $task := $value.custom.tasks }}
         - taskName: {{ $task.name }}
         {{ if $value.custom.serviceAccounts }} 
-          serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
-        {{- else if $task.clusterAdmin -}}
-        {{- range $sa := $value.custom.serviceAccounts -}}
-        {{- with $sa.yaml -}}
-          serviceAccountName: {{ .metadata.name }}
-        {{- end }}
-        {{- end }}
+          serviceAccountName: {{ $task.name }}
         {{- end }}
         {{- end }}
         {{- end }}
@@ -86,8 +64,8 @@ spec:
         value: $(tt.params.git_revision)
       - name: git_revision_owner
         value: $(tt.params.git_revision_owner)
-      - name: git_repository_name
-        value: $(tt.params.git_repository_name)
+      - name: git_branch_name
+        value: $(tt.params.git_branch_name)
       workspaces:
         - name: git-pvc
           volumeClaimTemplate:
@@ -115,5 +93,6 @@ spec:
           configMap:
             name: "{{ include "generic.fullname" $ }}-{{ $.Values.configmap_kube_conf }}"
 ---
+{{- end }}
 {{- end }}
 {{- end }}

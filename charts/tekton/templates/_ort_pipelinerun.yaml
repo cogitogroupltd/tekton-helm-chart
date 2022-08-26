@@ -1,14 +1,14 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: prod-
+  generateName: ort-
   namespace: tekton-pipelines
 spec:
   pipelineRef:
-    name: prod
+    name: ort
   params:
   - name: git_revision
-    value: "v1.01"
+    value: "feature/tekton-ort"
   workspaces:
     - name: git-pvc
       volumeClaimTemplate:

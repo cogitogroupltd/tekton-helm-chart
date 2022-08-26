@@ -1,0 +1,565 @@
+secret_ssh_key:
+secret_ssh_cred: ssh-key
+secret_docker_conf: docker-config
+docker_config_json: 
+configmap_kube_conf: kube-config
+secret_slack_webhook_uri: 
+github_token:
+
+cleanup_cronjob:
+  enabled: true
+
+
+services:
+- name: webhook
+  type: LoadBalancer # https://tekton.coolcatsnft.com
+  port: 443
+  nodePort: 30171
+  targetPort: 8080
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:683746102303:certificate/f2a2f311-568b-4b57-8acf-3cbb509aad6f 
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS-1-2-2017-01
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '*'
+    service.beta.kubernetes.io/aws-load-balancer-type: elb
+  selector:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+
+
+taskdefinitions:
+  enabled: true
+  serviceAccounts:
+  - name: ecr-build-push
+    yaml: |-
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: ecr-build-push
+        namespace: tekton-pipelines
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: "cluster-administrator-ecr-build"
+      subjects:
+        - kind: ServiceAccount
+          name: "ecr-build-push"
+          namespace: tekton-pipelines
+      roleRef:
+        kind: ClusterRole
+        name: cluster-admin
+        apiGroup: rbac.authorization.k8s.io
+  - name: helm-deploy
+    yaml: |-
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: helm-deploy
+        namespace: tekton-pipelines
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: "cluster-administrator-helm-deploy"
+      subjects:
+        - kind: ServiceAccount
+          name: "helm-deploy"
+          namespace: tekton-pipelines
+      roleRef:
+        kind: ClusterRole
+        name: cluster-admin
+        apiGroup: rbac.authorization.k8s.io
+  tasks:
+  - name: ecr-build-push
+    clusterAdmin: false
+    description: >-
+      This task does a AWS CLI command to login to ECR, build the docker image and push to ECR
+    podTemplate:
+      tolerations:
+        - key: "name"
+          operator: "Equal"
+          value: "infra"
+          effect: "NoSchedule"
+    volumes:
+    - name: aws
+      secret:
+        secretName: aws
+    - name: docker
+      hostPath:
+        path: /var/run/docker.sock
+    workspaces:
+    - name: git-pvc
+      description: "git source volume"
+    runAfter:
+    - git-clone
+    params:
+    - name: app_short_name
+      type: string
+    - name: AWS_ECR_ACCOUNT_ID
+      type: string
+      default: ""
+    - name: AWS_REGION
+      type: string
+      default: "us-east-1"
+    - name: docker_tag_version
+      type: string
+      default: "master"
+    - name: stage
+      type: string
+      default: "defaultstage"
+    - name: arch
+      type: string
+      default: "arm64"
+    steps:
+    - name: ecr-build-push
+      image: george7522/jenkins-agent:0.04
+      workingDir: $(workspaces.git-pvc.path)
+      volumeMounts:
+      - name: aws
+        mountPath: /root/.aws
+      - name: docker
+        mountPath: /var/run/docker.sock
+      script: |
+        set -x 
+        set -e
+        export location="."
+        export SECRET_KEY="eks-$(params.stage).env"
+        export AWS_PROFILE=CC
+
+        # Set env vars from secrets manager
+        npm_string="NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id "npm/token" --query SecretString | jq '.' -r | jq '.NPM_TOKEN' -r)"
+        echo $npm_string >> "${SECRET_KEY}"
+        $(printf "$(grep -v '^#' "${SECRET_KEY}" | grep -v -e '^$' | awk '{var="export  "$0; print var}')")
+
+        # Build image
+        aws ecr get-login-password --region $(params.AWS_REGION) | docker login --username AWS --password-stdin "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com"
+        docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
+        docker push "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)"  
+  - name: helm-deploy
+    clusterAdmin: false
+    description: >-
+      This task does a helm deployment to EKS
+    # podTemplate:
+    #   tolerations:
+    #     - key: "name"
+    #       operator: "Equal"
+    #       value: "infra"
+    #       effect: "NoSchedule"
+    volumes:
+    - name: aws
+      secret:
+        secretName: aws
+    workspaces:
+    - name: git-pvc
+      description: "git source volume"
+    runAfter:
+    - git-clone-infra
+    params:
+    - name: app_short_name
+      type: string
+    - name: docker_tag_version
+      type: string
+      default: "master"
+    - name: stage
+      type: string
+      default: "defaultstage"
+    steps:
+    - name: helm-deploy
+      image: george7522/jenkins-agent:0.04
+      workingDir: $(workspaces.git-pvc.path)
+      volumeMounts:
+      - name: aws
+        mountPath: /root/.aws
+      script: | 
+        set -e
+        export stage="$(params.stage)"
+        export app_short_name="$(params.app_short_name)"
+        export docker_tag_version="$(params.docker_tag_version)"
+        export SECRET_KEY="eks-$(params.stage).env"
+        export AWS_PROFILE=CC
+
+        # Unset env vars if they're already set
+        aws secretsmanager get-secret-value --secret-id "${SECRET_KEY}" --query SecretString | jq '.' -r  | sed 's/__ENV_//g' > "${SECRET_KEY}"
+        unset $(grep -v '^#' "${SECRET_KEY}" | cut -f1 -d'=' | xargs)
+
+        # Set env vars from secrets manager
+        $(printf "$(grep -v '^#' "${SECRET_KEY}" | grep -v -e '^$' | awk '{var="export  "$0; print var}')")
+
+        cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
+        set -x
+        helm upgrade --install "${app_short_name}" ./examples/complete/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
+        kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
+
+
+pipelines:
+  - name: alpha-api
+    trigger:
+      git_revisions: ['refs/heads/cicd-alpha']
+      eventTypes: ["push"]
+      token: ""
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/nestjs-coolcatsnft
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: git-clone-infra
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/aws-eks-infrastructure
+      - name: revision #revision/commit
+        value: feature/tekton
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - ecr-build-push
+    - name: ecr-build-push
+      description: >-
+        This task does a AWS CLI command to login to ECR
+      taskRef:
+        name: ecr-build-push
+      runAfter:
+        - git-clone
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "683746102303"
+      - name: AWS_REGION
+        value: "us-east-1"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "alpha"
+      - name: arch
+        value: "defaultarch"
+      workspaces:
+      - name: git-pvc
+        workspace: git-pvc
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      workspaces:
+      - name: git-pvc
+        workspace: "git-pvc"
+      runAfter:
+      - ecr-build-push
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "alpha"
+    custom:
+      enabled: false
+  - name: dev-worker
+    trigger:
+      git_revisions: ['refs/heads/cicd-dev']
+      eventTypes: ["push"]
+      token: ""
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/coolcats-nodejs-server
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: git-clone-infra
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/aws-eks-infrastructure
+      - name: revision #revision/commit
+        value: feature/tekton
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - ecr-build-push
+    - name: ecr-build-push
+      description: >-
+        This task does a AWS CLI command to login to ECR
+      taskRef:
+        name: ecr-build-push
+      runAfter:
+        - git-clone
+      params:
+      - name: app_short_name
+        value: "worker"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "683746102303"
+      - name: AWS_REGION
+        value: "us-east-1"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "dev"
+      - name: arch
+        value: "defaultarch"
+      workspaces:
+      - name: git-pvc
+        workspace: git-pvc
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      workspaces:
+      - name: git-pvc
+        workspace: "git-pvc"
+      runAfter:
+      - ecr-build-push
+      params:
+      - name: app_short_name
+        value: "worker"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "dev"
+    custom:
+      enabled: false
+  - name: dev-api
+    trigger:
+      git_revisions: ['refs/heads/cicd-dev']
+      eventTypes: ["push"]
+      token: ""
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/nestjs-coolcatsnft
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: git-clone-infra
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/aws-eks-infrastructure
+      - name: revision #revision/commit
+        value: feature/tekton
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - ecr-build-push
+    - name: ecr-build-push
+      description: >-
+        This task does a AWS CLI command to login to ECR
+      taskRef:
+        name: ecr-build-push
+      runAfter:
+        - git-clone
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "683746102303"
+      - name: AWS_REGION
+        value: "us-east-1"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "dev"
+      - name: arch
+        value: "defaultarch"
+      workspaces:
+      - name: git-pvc
+        workspace: git-pvc
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      workspaces:
+      - name: git-pvc
+        workspace: "git-pvc"
+      runAfter:
+      - ecr-build-push
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "dev"
+    custom:
+      enabled: false
+  - name: stage-worker
+    trigger:
+      git_revisions: ['refs/heads/cicd-stage']
+      eventTypes: ["push"]
+      token: ""
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/coolcats-nodejs-server
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: git-clone-infra
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/aws-eks-infrastructure
+      - name: revision #revision/commit
+        value: feature/tekton
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - ecr-build-push
+    - name: ecr-build-push
+      description: >-
+        This task does a AWS CLI command to login to ECR
+      taskRef:
+        name: ecr-build-push
+      runAfter:
+        - git-clone
+      params:
+      - name: app_short_name
+        value: "worker"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "683746102303"
+      - name: AWS_REGION
+        value: "us-east-1"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "stage"
+      - name: arch
+        value: "defaultarch"
+      workspaces:
+      - name: git-pvc
+        workspace: git-pvc
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      workspaces:
+      - name: git-pvc
+        workspace: "git-pvc"
+      runAfter:
+      - ecr-build-push
+      params:
+      - name: app_short_name
+        value: "worker"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "stage"
+    custom:
+      enabled: false
+  - name: stage-api
+    trigger:
+      git_revisions: ['refs/heads/cicd-stage']
+      eventTypes: ["push"]
+      token: ""
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/nestjs-coolcatsnft
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: git-clone-infra
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:coolcatsnft/aws-eks-infrastructure
+      - name: revision #revision/commit
+        value: feature/tekton
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+      runAfter:
+        - ecr-build-push
+    - name: ecr-build-push
+      description: >-
+        This task does a AWS CLI command to login to ECR
+      taskRef:
+        name: ecr-build-push
+      runAfter:
+        - git-clone
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "683746102303"
+      - name: AWS_REGION
+        value: "us-east-1"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "stage"
+      - name: arch
+        value: "defaultarch"
+      workspaces:
+      - name: git-pvc
+        workspace: git-pvc
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      workspaces:
+      - name: git-pvc
+        workspace: "git-pvc"
+      runAfter:
+      - ecr-build-push
+      params:
+      - name: app_short_name
+        value: "api"
+      - name: docker_tag_version
+        value: $(params.git_revision)
+      - name: stage
+        value: "stage"
+    custom:
+      enabled: false

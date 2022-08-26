@@ -1,14 +1,19 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: prod-
+  generateName: alpha-worker-
   namespace: tekton-pipelines
 spec:
   pipelineRef:
-    name: prod
+    name: alpha-worker
   params:
   - name: git_revision
-    value: "v1.01"
+    value: cicd-alpha
+  taskRunSpecs:
+    - pipelineTaskName: ecr-build-push
+      taskServiceAccountName: ecr-build-push
+    - pipelineTaskName: helm-deploy
+      taskServiceAccountName: helm-deploy
   workspaces:
     - name: git-pvc
       volumeClaimTemplate:
