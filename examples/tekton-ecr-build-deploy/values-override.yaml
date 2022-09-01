@@ -120,6 +120,8 @@ taskdefinitions:
       volumeMounts:
       - name: docker
         mountPath: /var/run/docker.sock
+      - name: aws
+        mountPath: /root/.aws
       env:
       - name: AWS_ACCESS_KEY_ID
         value: $(params.AWS_ACCESS_KEY_ID)
@@ -134,6 +136,7 @@ taskdefinitions:
         set -e
         export location="."
         # Build image
+        export AWS_PROFILE=GEN
         aws ecr get-login-password --region $(params.AWS_REGION) | docker login --username AWS --password-stdin "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com"
         docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
         docker push "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)"  
@@ -141,12 +144,6 @@ taskdefinitions:
     clusterAdmin: false
     description: >-
       This task does a helm deployment to EKS
-    # podTemplate:
-    #   tolerations:
-    #     - key: "name"
-    #       operator: "Equal"
-    #       value: "infra"
-    #       effect: "NoSchedule"
     workspaces:
     - name: git-pvc
       description: "git source volume"
@@ -167,12 +164,13 @@ taskdefinitions:
       workingDir: $(workspaces.git-pvc.path)
       script: | 
         set -e
+        set -x
         export stage="$(params.stage)"
         export app_short_name="$(params.app_short_name)"
         export docker_tag_version="$(params.docker_tag_version)"
         # cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
         set -x
-        helm upgrade --install "${app_short_name}" ./examples/complete/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
+        helm upgrade --install "${app_short_name}" ./helm-chart-boilerplate/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
         kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
 
 
@@ -180,7 +178,7 @@ taskdefinitions:
 pipelines:
   - name: prod
     trigger:
-      git_revisions: ['refs/heads/cicd-dev']
+      git_revisions: ['refs/heads/master']
       eventTypes: ["push"]
       token: ""
     taskcall:
@@ -189,7 +187,7 @@ pipelines:
         name: "git-clone"
       params:
       - name: url
-        value: git@github.com:dockerised/docker-anyconnect-vpn
+        value: git@github.com:dockerised/docker-nginx-hello-world
       - name: revision #revision/commit
         value: $(params.git_revision)
       workspaces:
@@ -202,9 +200,13 @@ pipelines:
         name: "git-clone"
       params:
       - name: url
-        value: git@github.com:cogitogroupltd/tekton-helm-chart
+        value: git@github.com:cogitogroupltd/helm-chart-boilerplate
       - name: revision #revision/commit
-        value: master
+        value: main
+      - name: deleteExisting
+        value: false
+      - name: subdirectory
+        value: helm-chart-boilerplate
       workspaces:
       - name: ssh-directory
         workspace: ssh-creds
@@ -221,26 +223,24 @@ pipelines:
         - git-clone
       params:
       - name: app_short_name
-        value: "api"
+        value: "test"
       - name: AWS_ECR_ACCOUNT_ID
-        value: "683746102303"
+        value: "009453609091"
       - name: AWS_REGION
-        value: "us-east-1"
+        value: "eu-west-1"
       - name: AWS_ACCESS_KEY_ID
-        value: ""
+        value: "REPLACE_ME"
       - name: AWS_SECRET_ACCESS_KEY
-        value: ""
+        value: "REPLACE_ME"
       - name: docker_tag_version
         value: $(params.git_revision)
       - name: stage
-        value: "dev"
+        value: "prod"
       - name: arch
         value: "defaultarch"
       workspaces:
       - name: git-pvc
         workspace: git-pvc
-      runAfter:
-      - git-clone
     - name: helm-deploy
       taskRef:
         name: helm-deploy
@@ -248,13 +248,13 @@ pipelines:
       - name: git-pvc
         workspace: "git-pvc"
       runAfter:
-      - ecr-build-push
+        - git-clone-infra
       params:
       - name: app_short_name
-        value: "api"
+        value: "nginx"
       - name: docker_tag_version
         value: $(params.git_revision)
       - name: stage
-        value: "dev"
+        value: "prod"
     custom:
       enabled: false
