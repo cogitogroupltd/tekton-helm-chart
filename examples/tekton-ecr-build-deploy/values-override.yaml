@@ -6,6 +6,10 @@ configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
 github_token:
 
+# Define variables 
+AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "009453609091"
+AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM32UCBS2RNSP5K"
+AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIu___REPLACE_ME___Eb2cWjE2+2bgoWP+K"
 
 # services:
 # - name: webhook
@@ -92,6 +96,12 @@ taskdefinitions:
     params:
     - name: app_short_name
       type: string
+    - name: location
+      type: string
+      default: "."
+    - name: AWS_ECR_REPOSITORY
+      type: string
+      default: ""
     - name: AWS_ECR_ACCOUNT_ID
       type: string
       default: ""
@@ -103,7 +113,7 @@ taskdefinitions:
       default: ""
     - name: AWS_REGION
       type: string
-      default: "us-east-1"
+      default: "eu-west-1"
     - name: docker_tag_version
       type: string
       default: "master"
@@ -123,25 +133,18 @@ taskdefinitions:
       - name: aws
         mountPath: /root/.aws
       env:
-      - name: AWS_ACCESS_KEY_ID
-        value: $(params.AWS_ACCESS_KEY_ID)
-      - name: AWS_SECRET_ACCESS_KEY
-        value: $(params.AWS_SECRET_ACCESS_KEY)
-      - name: AWS_REGION
-        value: $(params.AWS_REGION)
-      - name: AWS_ECR_ACCOUNT_ID
-        value: $(params.AWS_ECR_ACCOUNT_ID)
+      - name: location
+        value: $(params.location)
       script: |
         set -x 
         set -e
-        export location="."
         # Build image
         export AWS_PROFILE=GEN
         aws ecr get-login-password --region $(params.AWS_REGION) | docker login --username AWS --password-stdin "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com"
-        docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
-        docker push "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.app_short_name):$(params.docker_tag_version)"  
+        docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
+        docker push "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)"  
   - name: helm-deploy
-    clusterAdmin: false
+    clusterAdmin: false  
     description: >-
       This task does a helm deployment to EKS
     workspaces:
@@ -150,6 +153,18 @@ taskdefinitions:
     runAfter:
     - git-clone-infra
     params:
+    - name: AWS_ECR_ACCOUNT_ID
+      type: string
+      default: ""
+    - name: AWS_ACCESS_KEY_ID
+      type: string
+      default: ""
+    - name: AWS_SECRET_ACCESS_KEY
+      type: string
+      default: ""
+    - name: AWS_REGION
+      type: string
+      default: "eu-west-1"
     - name: app_short_name
       type: string
     - name: docker_tag_version
@@ -161,6 +176,15 @@ taskdefinitions:
     steps:
     - name: helm-deploy
       image: george7522/jenkins-agent:0.04
+      env:
+      - name: AWS_ACCESS_KEY_ID
+        value: $(params.AWS_ACCESS_KEY_ID)
+      - name: AWS_SECRET_ACCESS_KEY
+        value: $(params.AWS_SECRET_ACCESS_KEY)
+      - name: AWS_REGION
+        value: $(params.AWS_REGION)
+      - name: AWS_ECR_ACCOUNT_ID
+        value: $(params.AWS_ECR_ACCOUNT_ID)
       workingDir: $(workspaces.git-pvc.path)
       script: | 
         set -e
@@ -169,7 +193,7 @@ taskdefinitions:
         export app_short_name="$(params.app_short_name)"
         export docker_tag_version="$(params.docker_tag_version)"
         # cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
-        set -x
+        kubectl delete secret regcred -n "${stage}" --ignore-not-found=true ;  kubectl create secret docker-registry regcred -n "${stage}" --docker-server="$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com" --docker-username=AWS --docker-password="$(aws ecr get-login-password --region $(params.AWS_REGION))" --docker-email="whats@this.for"
         helm upgrade --install "${app_short_name}" ./helm-chart-boilerplate/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
         kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
 
@@ -223,15 +247,17 @@ pipelines:
         - git-clone
       params:
       - name: app_short_name
-        value: "test"
-      - name: AWS_ECR_ACCOUNT_ID
-        value: "009453609091"
+        value: "nginx"
       - name: AWS_REGION
         value: "eu-west-1"
+      - name: AWS_ECR_REPOSITORY
+        value: "test"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: *AWS_ECR_ACCOUNT_ID
       - name: AWS_ACCESS_KEY_ID
-        value: "REPLACE_ME"
+        value: *AWS_ACCESS_KEY_ID
       - name: AWS_SECRET_ACCESS_KEY
-        value: "REPLACE_ME"
+        value: *AWS_SECRET_ACCESS_KEY
       - name: docker_tag_version
         value: $(params.git_revision)
       - name: stage
@@ -250,6 +276,12 @@ pipelines:
       runAfter:
         - git-clone-infra
       params:
+      - name: AWS_ECR_ACCOUNT_ID
+        value: *AWS_ECR_ACCOUNT_ID
+      - name: AWS_ACCESS_KEY_ID
+        value: *AWS_ACCESS_KEY_ID
+      - name: AWS_SECRET_ACCESS_KEY
+        value: *AWS_SECRET_ACCESS_KEY
       - name: app_short_name
         value: "nginx"
       - name: docker_tag_version
