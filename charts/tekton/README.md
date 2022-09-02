@@ -40,6 +40,10 @@ kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
 
 ```
 
+- Build and push Docker image for running pipeline stages (optional)
+
+See [docker/cicd-agent/README.md](../../docker/cicd-agent/README.md)
+
 - Open browser and navigate to http://localhost:8887
 
 
