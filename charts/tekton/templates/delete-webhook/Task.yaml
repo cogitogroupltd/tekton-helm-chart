@@ -1,3 +1,4 @@
+{{ if $.Values.github_token }}
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -9,12 +10,11 @@ spec:
 
     The create-webhook Task will create a webhook and store the webhook ID in a configMap. 
     The configmap is solely used by the delete-webhook task.
-    
+
   volumes:
   - name: github-secret
     secret:
       secretName: $(params.GitHubSecretName)
-
   params:
   - name: ExternalDomain
     description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
@@ -40,8 +40,10 @@ spec:
   - name: create-webhook
     image: python
     volumeMounts:
+{{ if $.Values.github_token }}
     - name: github-secret
       mountPath: /var/secret
+{{ end }}
     command:
     - sh
     args:
@@ -95,4 +97,4 @@ spec:
       if delete:
         api_response = api_instance.delete_namespaced_config_map(name="{{ include "generic.fullname" . }}-create-webhook", namespace="{{ .Release.Namespace }}")  
       EOF
-      
+{{ end }}

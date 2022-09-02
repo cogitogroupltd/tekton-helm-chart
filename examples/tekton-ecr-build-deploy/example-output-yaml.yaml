@@ -1,0 +1,1454 @@
+# This file is generated Generated with command
+# helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="f" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug --create-namespace > example-output-yaml.yaml
+---
+# Source: pipeline/templates/global/serviceAccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "pipelines-tekton-default-sa"
+---
+# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecr-build-push
+  namespace: tekton-pipelines
+---
+# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: helm-deploy
+  namespace: tekton-pipelines
+---
+# Source: pipeline/templates/triggers/role.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "pipelines-tekton-triggers-sa"
+  namespace: tekton-pipelines
+---
+# Source: pipeline/templates/create-webhook/secret-github.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-secret
+  namespace: tekton-pipelines
+data:
+  token: 
+  secret: 
+---
+# Source: pipeline/templates/git-clone/secrets.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: "pipelines-ssh-key"
+  namespace: tekton-pipelines
+data:
+  id_rsa: 
+---
+# Source: pipeline/templates/kaniko-build/secret-docker-config.yaml
+apiVersion: v1
+kind: Secret
+type: generic
+metadata:
+  name: "pipelines-docker-config"
+  namespace: tekton-pipelines
+data:
+  config.json: 
+---
+# Source: pipeline/templates/send-to-webhook-slack/secret-webhook-uri.yaml
+apiVersion: v1
+kind: Secret
+type: generic
+metadata:
+  name: "pipelines-webhook-secret"
+  namespace: tekton-pipelines
+data:
+  url: 
+---
+# Source: pipeline/templates/triggers/github-token.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-token
+  namespace: tekton-pipelines
+type: Opaque
+data:
+  token: 
+---
+# Source: pipeline/templates/kubectl-restart-deployment/cm-kubeconfig.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "pipelines-kube-config"
+  namespace: tekton-pipelines
+data:
+  kubeconfig: |-
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: DUMMY
+        server: https://A5494263581FF77B9E1B5EDA88421698.gr7.eu-west-2.eks.amazonaws.com
+      name: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+    contexts:
+    - context:
+        cluster: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+        namespace: default
+        user: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+      name: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+    current-context: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+    kind: Config
+    preferences: {}
+    users:
+    - name: arn:aws:eks:eu-west-2:676312345602:cluster/staging-eks-private
+      user:
+        exec:
+          apiVersion: client.authentication.k8s.io/v1alpha1
+          args:
+          - --region
+          - eu-west-2
+          - eks
+          - get-token
+          - --cluster-name
+          - staging-eks-private
+          command: aws
+          interactiveMode: IfAvailable
+          provideClusterInfo: false
+---
+# Source: pipeline/templates/triggers/role.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "pipelines-tekton-triggers-cr"
+rules:
+- apiGroups:
+  - tekton.dev
+  resources:
+  - eventlisteners
+  - triggerbindings
+  - triggertemplates
+  - pipelineresources
+  verbs:
+  - get
+- apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  - pipelineresources
+  verbs:
+  - create
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - clusterinterceptors
+  - clustertriggerbindings
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Source: pipeline/templates/global/clusterRoleBinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "cluster-administrator-tekton-pipelines-pipelines"
+subjects:
+  - kind: ServiceAccount
+    name: "pipelines-tekton-default-sa"
+    namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "cluster-administrator-ecr-build"
+subjects:
+  - kind: ServiceAccount
+    name: "ecr-build-push"
+    namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "cluster-administrator-helm-deploy"
+subjects:
+  - kind: ServiceAccount
+    name: "helm-deploy"
+    namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pipeline/templates/triggers/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "pipelines-tekton-triggers-crb"
+subjects:
+  - kind: ServiceAccount
+    name: "pipelines-tekton-triggers-sa"
+    namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: "pipelines-tekton-triggers-cr"
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pipeline/templates/triggers/role.yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "pipelines-tekton-triggers-role"
+  namespace: tekton-pipelines
+rules:
+- apiGroups:
+  - tekton.dev
+  resources:
+  - eventlisteners
+  - triggerbindings
+  - triggertemplates
+  - pipelineresources
+  verbs:
+  - get
+- apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  - pipelineresources
+  verbs:
+  - create
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - triggerbindings
+  - triggers
+  - triggertemplates
+  - eventlisteners
+  - clusterinterceptors
+  - clustertriggerbindings
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Source: pipeline/templates/triggers/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "pipelines-tekton-triggers-rb"
+  namespace: tekton-pipelines
+subjects:
+- kind: ServiceAccount
+  name: "pipelines-tekton-triggers-sa"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "pipelines-tekton-triggers-role"
+---
+# Source: pipeline/templates/custom-task/serviceAccount.yaml
+---
+---
+# Source: pipeline/templates/triggers/eventListener.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: dev-listener
+  namespace: tekton-pipelines
+spec:
+  triggers:
+    - name: github-listener-prod
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "eventTypes"
+              value: [push]
+            - name: "overlays"
+              value:
+              - key: truncated_sha
+                expression: "body.pull_request.head.sha.truncate(7)"
+              - key: branch_name
+                expression: "body.ref"
+        - name: "only when push detected to specified branch"
+          ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value:  "body.ref in  [\"refs/heads/master\"]"
+      bindings:
+        - ref: prod
+      template:
+        ref: prod
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: "pipelines-tekton-triggers-sa"
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"
+---
+# Source: pipeline/templates/pipeline.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: prod
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: git_revision
+    description: The git revision
+    default: "master"
+  - name: git_revision_owner
+    description: The owner of the git revision
+    default: "git_owner_default_value"
+  - name: git_branch_name
+    description: The name of branch for the git revision
+    default: "git_branch_name_default_value"
+  - name: git_repository_name
+    description: The name of the git repository
+    default: "git_repository_name_default_value"
+  workspaces:
+    - name: git-pvc
+    - name: image-cache
+    - name: ssh-creds
+    - name: docker-creds-cm
+    - name: kubeconfig
+  results:
+
+  tasks:
+# Custom Tasks
+
+# / Custom Tasks
+# Global task calling
+
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      workspaces:
+
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+
+      params:
+      - name: url
+        value: "git@github.com:dockerised/docker-nginx-hello-world"
+      - name: revision
+        value: "$(params.git_revision)"
+    - name: git-clone-infra
+      taskRef:
+        name: git-clone
+      runAfter: [ecr-build-push]
+      workspaces:
+
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+
+      params:
+      - name: url
+        value: "git@github.com:cogitogroupltd/helm-chart-boilerplate"
+      - name: revision
+        value: "main"
+      - name: deleteExisting
+        value: "false"
+      - name: subdirectory
+        value: "helm-chart-boilerplate"
+    - name: ecr-build-push
+      taskRef:
+        name: ecr-build-push
+      runAfter: [git-clone]
+      workspaces:
+
+      - name: git-pvc
+        workspace: git-pvc
+
+      params:
+      - name: app_short_name
+        value: "nginx"
+      - name: AWS_REGION
+        value: "eu-west-1"
+      - name: AWS_ECR_REPOSITORY
+        value: "test"
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "009453609091"
+      - name: AWS_ACCESS_KEY_ID
+        value: "AKIAQEM32UCBS2RNSP5K"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "E+fkkgIu___REPLACE_ME___Eb2cWjE2+2bgoWP+K"
+      - name: docker_tag_version
+        value: "$(params.git_revision)"
+      - name: stage
+        value: "prod"
+      - name: arch
+        value: "defaultarch"
+    - name: helm-deploy
+      taskRef:
+        name: helm-deploy
+      runAfter: [git-clone-infra]
+      workspaces:
+
+      - name: git-pvc
+        workspace: git-pvc
+
+      params:
+      - name: AWS_ECR_ACCOUNT_ID
+        value: "009453609091"
+      - name: AWS_ACCESS_KEY_ID
+        value: "AKIAQEM32UCBS2RNSP5K"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "E+fkkgIu___REPLACE_ME___Eb2cWjE2+2bgoWP+K"
+      - name: app_short_name
+        value: "nginx"
+      - name: docker_tag_version
+        value: "$(params.git_revision)"
+      - name: stage
+        value: "prod"
+# / Global Task calling
+---
+# Source: pipeline/templates/buildah-build/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: buildah-build
+spec:
+  description: >-
+    s2i-java-11 task clones a Git repository and builds and pushes a container
+    image using S2I and a Java 11 builder image.
+  params:
+    - default: .
+      description: The location of the path to run s2i from
+      name: PATH_CONTEXT
+      type: string
+    - default: 'true'
+      description: >-
+        Verify the TLS on the registry endpoint (for push/pull to a non-TLS
+        registry)
+      name: TLSVERIFY
+      type: string
+    - default: ''
+      description: Additional Maven arguments
+      name: MAVEN_ARGS_APPEND
+      type: string
+    - default: 'false'
+      description: Remove the Maven repository after the artifact is built
+      name: MAVEN_CLEAR_REPO
+      type: string
+    - default: ''
+      description: The base URL of a mirror used for retrieving artifacts
+      name: MAVEN_MIRROR_URL
+      type: string
+    - description: Location of the repo where image has to be pushed
+      name: IMAGE_NAME
+      type: string
+    - description: The tag of the image to be pushed
+      name: IMAGE_TAG
+      type: string
+      default: "latest"
+  steps:
+    - name: build
+      workingDir: $(workspaces.source.path)
+      command:
+        - buildah
+        - bud
+        - '--storage-driver=vfs'
+        - '--tls-verify=$(params.TLSVERIFY)'
+        - '--layers'
+        - '-f'
+        - /gen-source/Dockerfile
+        - '-t'
+        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
+        - '-t'
+        - $(params.IMAGE_NAME):latest
+        - .
+      image: >-
+        registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
+      resources: {}
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+        - mountPath: /gen-source
+          name: gen-source
+      workingDir: /gen-source
+    - command:
+        - buildah
+        - push
+        - '--storage-driver=vfs'
+        - '--tls-verify=$(params.TLSVERIFY)'
+        - --digestfile
+        - $(workspaces.source.path)/image-digest
+        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
+        - 'docker://$(params.IMAGE_NAME):$(params.IMAGE_TAG)'
+      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
+      name: push-tag
+      resources: {}
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+    - command:
+        - buildah
+        - push
+        - '--storage-driver=vfs'
+        - '--tls-verify=$(params.TLSVERIFY)'
+        - --digestfile
+        - $(workspaces.source.path)/image-digest
+        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
+        - 'docker://$(params.IMAGE_NAME):latest'
+      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
+      name: push-latest
+      resources: {}
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+    - name: digest-to-results
+      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
+      script: cat $(workspaces.source.path)/image-digest | tee /tekton/results/IMAGE_DIGEST
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+    - emptyDir: {}
+      name: gen-source
+    - emptyDir: {}
+      name: envparams
+  workspaces:
+  - name: source
+    description: Holds the context and docker file
+  results:
+  - name: IMAGE_DIGEST
+    description: Digest of the image just built.
+---
+# Source: pipeline/templates/create-webhook/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "pipelines-create-webhook"
+  namespace: tekton-pipelines
+spec:
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python:latest
+    volumeMounts:
+    - name: github-secret
+      mountPath: /var/secret
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Creating Webhook"
+      pip install kubernetes
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import base64
+      import requests
+      import json
+
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      # Read Github token
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # create Github webhook and return id
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+      data = '{"name": "web","active": true,"events": $(params.WebhookEvents) ,"config": {"url": "https://$(params.ExternalDomain)","content_type": "json","insecure_ssl": "1" }}'
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.post('https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks', data=data, headers=Headers)
+      print(x.text)
+      json_response=json.loads(x.text)
+      webhook_id=str(json_response['id'])
+      # Encode Hook ID as base64 to save in configMap
+      urlSafeEncodedBytes = base64.urlsafe_b64encode(webhook_id.encode("utf-8"))
+      urlSafeEncodedStr = str(urlSafeEncodedBytes, "utf-8")
+
+      # Create ConfigMap containing ID for the delete-webhook job
+      api_instance = client.CoreV1Api()
+      delete=False
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-pipelines", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          print(len(api_response.items))
+          if len(api_response.items) == 1 :
+            delete=True
+          # print(api_response)
+      except Exception as e:
+          print("No configMap found, creating pipelines to store Webhook ID")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-pipelines")  
+      api_instance.create_namespaced_config_map(
+          body=client.V1ConfigMap(
+              metadata=client.V1ObjectMeta(
+                  name="pipelines-create-webhook",
+                  namespace="tekton-pipelines"
+              ),
+              data={
+                  "id": urlSafeEncodedStr
+              }
+          ),
+          namespace="tekton-pipelines"
+      )
+      print("Created configMap pipelines with Webhook id=%s" % webhook_id)
+      EOF
+---
+# Source: pipeline/templates/delete-webhook/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "pipelines-delete-webhook"
+  namespace: tekton-pipelines
+spec:
+  description: >-
+    This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
+
+    The create-webhook Task will create a webhook and store the webhook ID in a configMap. 
+    The configmap is solely used by the delete-webhook task.
+    
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python
+    volumeMounts:
+    - name: github-secret
+      mountPath: /var/secret
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Deleting Webhook"
+      pip install kubernetes
+      
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import requests
+      import base64
+      import json
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # Retrieve webhook id from configmap
+      api_instance = client.CoreV1Api()
+      try: 
+        api_response = api_instance.read_namespaced_config_map(namespace="tekton-pipelines", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
+        webhook_id_b64=api_response.data["id"]
+        webhook_id=base64.b64decode(webhook_id_b64).decode("utf-8")
+        
+      except Exception as e:
+        print("Exception when calling CoreV1Api->read_namespaced_config_map: %s\n" % e)
+
+      # Send request to delete the webhook
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.delete("https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      else:
+        x = requests.delete("https://$(params.GitHubDomain)/api/v3/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      print("deleted webhook_id: %s" % webhook_id)
+      # Delete configMap containing webhook_id
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-pipelines", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          delete=True
+      except Exception as e:
+          print("No configMap found called pipelines")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-pipelines")  
+      EOF
+---
+# Source: pipeline/templates/git-clone/task.yaml
+# https://hub.tekton.dev/tekton/task/git-clone
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "git-clone"
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.5"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.21.0"
+    tekton.dev/categories: Git
+    tekton.dev/tags: git
+    tekton.dev/displayName: "git clone"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+spec:
+  description: >-
+    These Tasks are Git tasks to work with repositories used by other tasks
+    in your Pipeline.
+
+    The git-clone Task will clone a repo from the provided url into the
+    output Workspace. By default the repo will be cloned into the root of
+    your Workspace. You can clone into a subdirectory by setting this Task's
+    subdirectory param. This Task also supports sparse checkouts. To perform
+    a sparse checkout, pass a list of comma separated directory patterns to
+    this Task's sparseCheckoutDirectories param.
+  workspaces:
+    - name: output
+      description: The git repo will be cloned onto the volume backing this Workspace.
+    - name: ssh-directory
+      optional: true
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc. Copied to
+        the user's home before git commands are executed. Used to authenticate
+        with the git remote when performing the clone. Binding a Secret to this
+        Workspace is strongly recommended over other volume types.
+    - name: basic-auth
+      optional: true
+      description: |
+        A Workspace containing a .gitconfig and .git-credentials file. These
+        will be copied to the user's home before any git commands are run. Any
+        other files in this Workspace are ignored. It is strongly recommended
+        to use ssh-directory over basic-auth whenever possible and to bind a
+        Secret to this Workspace over other volume types.
+    - name: ssl-ca-directory
+      optional: true
+      description: |
+        A workspace containing CA certificates, this will be used by Git to
+        verify the peer with when fetching or pushing over HTTPS.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: revision
+      description: Revision to checkout. (branch, tag, sha, ref, etc...)
+      type: string
+      default: ""
+    - name: refspec
+      description: Refspec to fetch before checking out revision.
+      default: ""
+    - name: submodules
+      description: Initialize and fetch git submodules.
+      type: string
+      default: "true"
+    - name: depth
+      description: Perform a shallow clone, fetching only the most recent N commits.
+      type: string
+      default: "1"
+    - name: sslVerify
+      description: Set the `http.sslVerify` global git config. Setting this to `false` is not advised unless you are sure that you trust your git remote.
+      type: string
+      default: "true"
+    - name: subdirectory
+      description: Subdirectory inside the `output` Workspace to clone the repo into.
+      type: string
+      default: ""
+    - name: sparseCheckoutDirectories
+      description: Define the directory patterns to match or exclude when performing a sparse checkout.
+      type: string
+      default: ""
+    - name: deleteExisting
+      description: Clean out the contents of the destination directory if it already exists before cloning.
+      type: string
+      default: "true"
+    - name: httpProxy
+      description: HTTP proxy server for non-SSL requests.
+      type: string
+      default: ""
+    - name: httpsProxy
+      description: HTTPS proxy server for SSL requests.
+      type: string
+      default: ""
+    - name: noProxy
+      description: Opt out of proxying HTTP/HTTPS requests.
+      type: string
+      default: ""
+    - name: verbose
+      description: Log the commands that are executed during `git-clone`'s operation.
+      type: string
+      default: "true"
+    - name: gitInitImage
+      description: The image providing the git-init binary that this Task runs.
+      type: string
+      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.21.0"
+    - name: userHome
+      description: |
+        Absolute path to the user's home directory. Set this explicitly if you are running the image as a non-root user or have overridden
+        the gitInitImage param with an image containing custom user configuration.
+      type: string
+      default: "/tekton/home"
+  results:
+    - name: commit
+      description: The precise commit SHA that was fetched by this Task.
+    - name: url
+      description: The precise URL that was fetched by this Task.
+    - name: revision
+      description: Revision of git repository pulled down (branch, tag, sha, ref, etc...).
+  steps:
+    - name: clone
+      image: "$(params.gitInitImage)"
+      env:
+      - name: HOME
+        value: "$(params.userHome)"
+      - name: PARAM_URL
+        value: $(params.url)
+      - name: PARAM_REVISION
+        value: $(params.revision)
+      - name: PARAM_REFSPEC
+        value: $(params.refspec)
+      - name: PARAM_SUBMODULES
+        value: $(params.submodules)
+      - name: PARAM_DEPTH
+        value: $(params.depth)
+      - name: PARAM_SSL_VERIFY
+        value: $(params.sslVerify)
+      - name: PARAM_SUBDIRECTORY
+        value: $(params.subdirectory)
+      - name: PARAM_DELETE_EXISTING
+        value: $(params.deleteExisting)
+      - name: PARAM_HTTP_PROXY
+        value: $(params.httpProxy)
+      - name: PARAM_HTTPS_PROXY
+        value: $(params.httpsProxy)
+      - name: PARAM_NO_PROXY
+        value: $(params.noProxy)
+      - name: PARAM_VERBOSE
+        value: $(params.verbose)
+      - name: PARAM_SPARSE_CHECKOUT_DIRECTORIES
+        value: $(params.sparseCheckoutDirectories)
+      - name: PARAM_USER_HOME
+        value: $(params.userHome)
+      - name: WORKSPACE_OUTPUT_PATH
+        value: $(workspaces.output.path)
+      - name: WORKSPACE_SSH_DIRECTORY_BOUND
+        value: $(workspaces.ssh-directory.bound)
+      - name: WORKSPACE_SSH_DIRECTORY_PATH
+        value: $(workspaces.ssh-directory.path)
+      - name: WORKSPACE_BASIC_AUTH_DIRECTORY_BOUND
+        value: $(workspaces.basic-auth.bound)
+      - name: WORKSPACE_BASIC_AUTH_DIRECTORY_PATH
+        value: $(workspaces.basic-auth.path)
+      - name: WORKSPACE_SSL_CA_DIRECTORY_BOUND
+        value: $(workspaces.ssl-ca-directory.bound)
+      - name: WORKSPACE_SSL_CA_DIRECTORY_PATH
+        value: $(workspaces.ssl-ca-directory.path)
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+
+        if [ "${PARAM_VERBOSE}" = "true" ] ; then
+          set -x
+        fi
+
+
+        if [ "${WORKSPACE_BASIC_AUTH_DIRECTORY_BOUND}" = "true" ] ; then
+          cp "${WORKSPACE_BASIC_AUTH_DIRECTORY_PATH}/.git-credentials" "${PARAM_USER_HOME}/.git-credentials"
+          cp "${WORKSPACE_BASIC_AUTH_DIRECTORY_PATH}/.gitconfig" "${PARAM_USER_HOME}/.gitconfig"
+          chmod 400 "${PARAM_USER_HOME}/.git-credentials"
+          chmod 400 "${PARAM_USER_HOME}/.gitconfig"
+        fi
+
+        if [ "${WORKSPACE_SSH_DIRECTORY_BOUND}" = "true" ] ; then
+          cp -R "${WORKSPACE_SSH_DIRECTORY_PATH}" "${PARAM_USER_HOME}"/.ssh
+          chmod 700 "${PARAM_USER_HOME}"/.ssh
+          chmod -R 400 "${PARAM_USER_HOME}"/.ssh/*
+        fi
+
+        if [ "${WORKSPACE_SSL_CA_DIRECTORY_BOUND}" = "true" ] ; then
+           export GIT_SSL_CAPATH="${WORKSPACE_SSL_CA_DIRECTORY_PATH}"
+        fi
+        CHECKOUT_DIR="${WORKSPACE_OUTPUT_PATH}/${PARAM_SUBDIRECTORY}"
+
+        cleandir() {
+          # Delete any existing contents of the repo directory if it exists.
+          #
+          # We don't just "rm -rf ${CHECKOUT_DIR}" because ${CHECKOUT_DIR} might be "/"
+          # or the root of a mounted volume.
+          if [ -d "${CHECKOUT_DIR}" ] ; then
+            # Delete non-hidden files and directories
+            rm -rf "${CHECKOUT_DIR:?}"/*
+            # Delete files and directories starting with . but excluding ..
+            rm -rf "${CHECKOUT_DIR}"/.[!.]*
+            # Delete files and directories starting with .. plus any other character
+            rm -rf "${CHECKOUT_DIR}"/..?*
+          fi
+        }
+
+        if [ "${PARAM_DELETE_EXISTING}" = "true" ] ; then
+          cleandir
+        fi
+
+        test -z "${PARAM_HTTP_PROXY}" || export HTTP_PROXY="${PARAM_HTTP_PROXY}"
+        test -z "${PARAM_HTTPS_PROXY}" || export HTTPS_PROXY="${PARAM_HTTPS_PROXY}"
+        test -z "${PARAM_NO_PROXY}" || export NO_PROXY="${PARAM_NO_PROXY}"
+
+        /ko-app/git-init \
+          -url="${PARAM_URL}" \
+          -revision="${PARAM_REVISION}" \
+          -refspec="${PARAM_REFSPEC}" \
+          -path="${CHECKOUT_DIR}" \
+          -sslVerify="${PARAM_SSL_VERIFY}" \
+          -submodules="${PARAM_SUBMODULES}" \
+          -depth="${PARAM_DEPTH}" \
+          -sparseCheckoutDirectories="${PARAM_SPARSE_CHECKOUT_DIRECTORIES}"
+        cd "${CHECKOUT_DIR}"
+        RESULT_SHA="$(git rev-parse HEAD)"
+        EXIT_CODE="$?"
+        if [ "${EXIT_CODE}" != 0 ] ; then
+          exit "${EXIT_CODE}"
+        fi
+        printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+        printf "%s" "${PARAM_URL}" > "$(results.url.path)"
+        printf "%s" "${PARAM_REVISION}" > "$(results.revision.path)"
+---
+# Source: pipeline/templates/kaniko-build/task.yaml
+# https://hub.tekton.dev/tekton/task/kaniko
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "kaniko-build"
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.5"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Image Build
+    tekton.dev/tags: image-build
+    tekton.dev/displayName: "Build and upload container image using Kaniko"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  description: >-
+    This Task builds source into a container image using Google's kaniko tool.
+
+    Kaniko doesn't depend on a Docker daemon and executes each
+    command within a Dockerfile completely in userspace. This enables
+    building container images in environments that can't easily or
+    securely run a Docker daemon, such as a standard Kubernetes cluster.
+
+  params:
+  - name: DOCKER_IMAGE_TAG
+    description: Tag (reference) of the image to build 
+  - name: DOCKER_REGISTRY
+    description: Name (reference) of the registry storing the image to build.
+  - name: DOCKER_REPOSITORY
+    description: Name (reference) of the image to build.
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build.
+    default: ./Dockerfile
+  - name: CONTEXT
+    description: The build context used by Kaniko.
+    default: ./
+  - name: EXTRA_ARGS
+    type: array
+    default: []
+  - name: BUILDER_IMAGE
+    description: The image on which builds will run (default is v1.5.1)
+    default: gcr.io/kaniko-project/executor:v1.7.0@sha256:8504bde9a9a8c9c4e9a4fe659703d265697a36ff13607b7669a4caa4407baa52
+  workspaces:
+  - name: source
+    description: Holds the context and docker file
+  - name: dockerconfig
+    description: Includes a docker `config.json`
+    optional: true
+    mountPath: /kaniko/.docker
+  - name: image-cache
+    description: directory for loading image caches across builds
+    optional: true
+    mountPath: /cache
+  results:
+  - name: IMAGE-DIGEST
+    description: Digest of the image just built.
+
+  steps:
+  - name: warm-cache
+    image: gcr.io/kaniko-project/warmer
+    args:
+    - --cache-dir=/cache
+    - --image=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY)
+    resources:
+      limits:
+        cpu: 2
+        memory: 4096Mi
+      requests:
+        cpu: 1
+        memory: 1048Mi
+  - name: build-and-push
+    workingDir: $(workspaces.source.path)
+    image: $(params.BUILDER_IMAGE)
+    args:
+    - $(params.EXTRA_ARGS[*])
+    - --dockerfile=$(params.DOCKERFILE)
+    - --context=$(workspaces.source.path)/$(params.CONTEXT)  # The user does not need to care the workspace and the source.
+    - --destination=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY):$(params.DOCKER_IMAGE_TAG)
+    - --cache=true
+    - --digest-file=/tekton/results/IMAGE-DIGEST
+    - --cache-dir=/cache
+    - --reproducible
+    # kaniko assumes it is running as root, which means this example fails on platforms
+    # that default to run containers as random uid (like OpenShift). Adding this securityContext
+    # makes it explicit that it needs to run as root.
+    securityContext:
+      runAsUser: 0
+---
+# Source: pipeline/templates/kubectl-restart-deployment/task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kubectl-restart-deployment
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: CLI, kubectl
+    tekton.dev/displayName: "kubernetes actions"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  workspaces:
+    - name: kubeconfig-dir
+      optional: true
+  params:
+    - name: deployment
+      type: string
+    - name: namespace
+      type: string
+      default: "default"
+    - name: git_repository_name
+      type: string
+      default: "defaultgitrepositoryname"
+    - name: docker_registry
+      type: string
+      default: "defaultdockerregistry"
+    - name: docker_repository
+      type: string
+      default: "defaultdockerrepo"
+    - name: tag
+      type: string
+      default: "master"
+    - name: arch
+      type: string
+      default: "arm64"
+  steps:
+    - name: get-kubectl-and-run-command
+      image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+      script: |
+        set -xe
+        cd /tmp
+        rm -f /usr/local/bin/kubectl
+        curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
+        chmod +x ./kubectl
+        mv ./kubectl /usr/local/bin/kubectl
+        chown root: /usr/local/bin/kubectl
+        kubectl version
+        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
+        kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)
+---
+# Source: pipeline/templates/send-to-webhook-slack/task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: send-to-webhook-slack
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/categories: Messaging
+    tekton.dev/tags: messaging
+    tekton.dev/displayName: "Send message to Slack Channel"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le"
+spec:
+  description: >-
+    These tasks post a simple message to a slack channel.
+
+    This task uses Incoming Webhooks of slack to send the message.
+
+  params:
+  - name: webhook-secret
+    type: string
+    description: secret name of the slack app webhook URL (key is url)
+  - name: message
+    type: string
+    description: plain text message
+  - name: log_level
+    type: string
+    description: plain text for log_level verbosity eg. INFO, WARNING, ERROR
+    default: 'INFO'
+  - name: git_revision_owner
+    type: string
+    description: The owner of the git revision
+  - name: helm_release_name
+    type: string
+    description: The name of the helm release for the pipeline
+  - name: pipeline_name
+    type: string
+    description: The name of the Tekton pipeline
+  - name: git_repository_name
+    type: string
+    description: The name of the git repository
+  - name: bot-name
+    type: string
+    description: plain text message
+    default: 'Tekton Bot'
+  - name: icon-emoji
+    type: string
+    description: plain text message
+    default: ':robot_face:'
+  steps:
+  - name: post
+    image: docker.io/curlimages/curl:7.70.0@sha256:031df77a11e5edded840bc761a845eab6e3c2edee22669fb8ad6d59484b6a1c4 #tag: 7.70.0
+    script: |
+      #!/usr/bin/env sh
+      MESSAGE=$(echo "$(date '+%Y-%m-%d-%H:%M%:S') ${LOG_LEVEL} [${GIT_REVISION_OWNER}] [${HELM_RELEASE_NAME}] [${GIT_REPOSITORY_NAME}] [${PIPELINE_NAME}] ${MESSAGE}" | sed -e 's/\"/\\\\"/g')
+      BOTNAME=$(echo "${BOTNAME}" | sed -e 's/\"/\\\\"/g')
+      JSON="{\"text\": \"${MESSAGE}\", \"username\": \"${BOTNAME}\", \"icon_emoji\": \"${EMOJI}\"}"
+      curl -X POST -H 'Content-Type: application/json' --data "${JSON}" "${URL}"
+    env:
+    - name: URL
+      valueFrom:
+        secretKeyRef:
+          name: $(params.webhook-secret)
+          key: url
+    - name: MESSAGE
+      value: $(params.message)
+    - name: BOTNAME
+      value: $(params.bot-name)
+    - name: GIT_REVISION_OWNER
+      value: $(params.git_revision_owner)
+    - name: PIPELINE_NAME
+      value: $(params.pipeline_name)
+    - name: GIT_REPOSITORY_NAME
+      value: $(params.git_repository_name)
+    - name: HELM_RELEASE_NAME
+      value: $(params.helm_release_name)
+    - name: EMOJI
+      value: $(params.icon-emoji)
+    - name: LOG_LEVEL
+      value: $(params.log_level)
+---
+# Source: pipeline/templates/task-definitions/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ecr-build-push
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: CLI, kubectl
+    tekton.dev/displayName: "kubernetes actions"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+
+  description: This task does a AWS CLI command to login to ECR
+
+  volumes:
+  - name: aws
+    secret:
+      secretName: aws
+  - hostPath:
+      path: /var/run/docker.sock
+    name: docker
+  results:
+  workspaces:
+  - description: git source volume
+    name: git-pvc
+  stepTemplate:
+  sidecars:
+  params:
+  - name: app_short_name
+    type: string
+  - default: .
+    name: location
+    type: string
+  - default: ""
+    name: AWS_ECR_REPOSITORY
+    type: string
+  - default: ""
+    name: AWS_ECR_ACCOUNT_ID
+    type: string
+  - default: ""
+    name: AWS_ACCESS_KEY_ID
+    type: string
+  - default: ""
+    name: AWS_SECRET_ACCESS_KEY
+    type: string
+  - default: eu-west-1
+    name: AWS_REGION
+    type: string
+  - default: master
+    name: docker_tag_version
+    type: string
+  - default: defaultstage
+    name: stage
+    type: string
+  - default: arm64
+    name: arch
+    type: string
+  steps:
+
+  - env:
+    - name: location
+      value: $(params.location)
+    image: george7522/jenkins-agent:0.04
+    name: ecr-build-push
+    script: "set -x \nset -e\n# Build image\nexport AWS_PROFILE=GEN\naws ecr get-login-password
+      --region $(params.AWS_REGION) | docker login --username AWS --password-stdin \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com\"\ndocker
+      build --network=host -t \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)\"
+      \"$location\" --build-arg NPM_TOKEN=\"${NPM_TOKEN}\"\ndocker push \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)\"
+      \ \n"
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker
+    - mountPath: /root/.aws
+      name: aws
+    workingDir: $(workspaces.git-pvc.path)
+---
+# Source: pipeline/templates/task-definitions/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: helm-deploy
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: CLI, kubectl
+    tekton.dev/displayName: "kubernetes actions"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+
+  description: This task does a helm deployment to EKS
+
+  volumes:
+  results:
+  workspaces:
+  - description: git source volume
+    name: git-pvc
+  stepTemplate:
+  sidecars:
+  params:
+  - default: ""
+    name: AWS_ECR_ACCOUNT_ID
+    type: string
+  - default: ""
+    name: AWS_ACCESS_KEY_ID
+    type: string
+  - default: ""
+    name: AWS_SECRET_ACCESS_KEY
+    type: string
+  - default: eu-west-1
+    name: AWS_REGION
+    type: string
+  - name: app_short_name
+    type: string
+  - default: master
+    name: docker_tag_version
+    type: string
+  - default: defaultstage
+    name: stage
+    type: string
+  steps:
+
+  - env:
+    - name: AWS_ACCESS_KEY_ID
+      value: $(params.AWS_ACCESS_KEY_ID)
+    - name: AWS_SECRET_ACCESS_KEY
+      value: $(params.AWS_SECRET_ACCESS_KEY)
+    - name: AWS_REGION
+      value: $(params.AWS_REGION)
+    - name: AWS_ECR_ACCOUNT_ID
+      value: $(params.AWS_ECR_ACCOUNT_ID)
+    image: george7522/jenkins-agent:0.04
+    name: helm-deploy
+    script: |
+      set -e
+      set -x
+      export stage="$(params.stage)"
+      export app_short_name="$(params.app_short_name)"
+      export docker_tag_version="$(params.docker_tag_version)"
+      # cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
+      kubectl delete secret regcred -n "${stage}" --ignore-not-found=true ;  kubectl create secret docker-registry regcred -n "${stage}" --docker-server="$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com" --docker-username=AWS --docker-password="$(aws ecr get-login-password --region $(params.AWS_REGION))" --docker-email="whats@this.for"
+      helm upgrade --install "${app_short_name}" ./helm-chart-boilerplate/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
+      kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
+    workingDir: $(workspaces.git-pvc.path)
+---
+# Source: pipeline/templates/triggers/trigger.yaml
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: Trigger
+metadata:
+  name: prod
+  namespace: tekton-pipelines
+spec:
+  interceptors:
+    - ref:
+        name: "cel"
+  bindings:
+  - ref: prod
+  template:
+    ref: prod
+---
+# Source: pipeline/templates/triggers/triggerBinding.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: prod
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: git_revision
+
+
+
+  - name: namespace
+    value: default
+  - name: git_source
+    value: $(body.repository.html_url)
+  - name: git_repository_name
+    value: $(body.repository.name)
+  - name: git_revision_owner
+---
+# Source: pipeline/templates/triggers/triggerTemplate.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: prod
+  namespace: 
+spec:
+  params:
+  - name: git_revision
+    description: The git revision
+  - name: git_revision_owner
+    description: The owner of the git revision
+  - name: git_repository_name
+    description: The name of the git repository
+  - name: git_branch_name
+    description: The name of the git repository
+  - name: url
+    description: The git repository url
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: prod-$(uid)
+    spec:
+      
+      pipelineRef:
+        name: prod
+      # podTemplate:
+      #   securityContext:
+      #     runAsNonRoot: true
+      #     runAsUser: 1000920000
+      #     fsGroup: 1000920000
+      serviceAccountNames:
+        
+      params:
+      - name: git_revision
+        value: $(tt.params.git_revision)
+      - name: git_revision_owner
+        value: $(tt.params.git_revision_owner)
+      - name: git_branch_name
+        value: $(tt.params.git_branch_name)
+      workspaces:
+        - name: git-pvc
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
+        - name: image-cache
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
+        - name: ssh-creds
+          secret:
+            secretName: "pipelines-ssh-key"
+        - name: docker-creds-cm
+          secret:
+            secretName: "pipelines-docker-config"
+        - name: kubeconfig
+          configMap:
+            name: "pipelines-kube-config"

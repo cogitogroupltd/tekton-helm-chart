@@ -1,3 +1,4 @@
+{{ if $.Values.github_token }}
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -98,3 +99,4 @@ spec:
       )
       print("Created configMap {{ include "generic.fullname" . }} with Webhook id=%s" % webhook_id)
       EOF
+{{ end }}

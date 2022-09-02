@@ -6,10 +6,10 @@ configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
 github_token:
 
-# Define variables 
+# Define variables used for both ecr-build-push and imagePullSecret in helm-deploy
 AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "009453609091"
-AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM32UCBS2RNSP5K"
-AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIu___REPLACE_ME___Eb2cWjE2+2bgoWP+K"
+AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM_____REPLACE_ME_____RNSP5K"
+AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fk___________REPLACE_ME________cWjE2+2bgoWP+K"
 
 # services:
 # - name: webhook
@@ -125,7 +125,7 @@ taskdefinitions:
       default: "arm64"
     steps:
     - name: ecr-build-push
-      image: george7522/jenkins-agent:0.04
+      image: george7522/cicd-agent:0.01
       workingDir: $(workspaces.git-pvc.path)
       volumeMounts:
       - name: docker
@@ -175,7 +175,7 @@ taskdefinitions:
       default: "defaultstage"
     steps:
     - name: helm-deploy
-      image: george7522/jenkins-agent:0.04
+      image: george7522/cicd-agent:0.01
       env:
       - name: AWS_ACCESS_KEY_ID
         value: $(params.AWS_ACCESS_KEY_ID)
