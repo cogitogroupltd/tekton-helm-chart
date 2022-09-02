@@ -1,5 +1,7 @@
 # Tekton pipeline to build and push docker image to ECR and use Helm to deploy
 
+Source repository https://github.com/cogitogroupltd/tekton-helm-chart
+
 PreReqs:
 - See [README.md](../../charts/tekton/README.md)
 

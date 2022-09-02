@@ -1,3 +1,10 @@
+# Tekton pipelines Helm Chart
+
+Successfully tested on:
+ - AWS EKS using NLB and ALB
+ - Kind [download](https://kind.sigs.k8s.io/)
+ - Rancher K3s 
+ - Google Kubernetes Engine (GKE)
 
 ToDo:
 - Move buildpush script to configMap

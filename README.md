@@ -18,6 +18,8 @@ ToDo:
 - Make eks.role.arn annotations make sense
 - Move resource defs from eventListener
 - Remove dependeny on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
+- Documentation for Windows
+- Test Documentation on WSL
 
 
 Contents: 

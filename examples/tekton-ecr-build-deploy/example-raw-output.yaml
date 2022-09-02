@@ -1,5 +1,5 @@
 # This file is generated Generated with command
-# helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="f" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug --create-namespace > example-output-yaml.yaml
+# helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="f" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug --create-namespace > example-raw-output.yaml
 ---
 # Source: pipeline/templates/global/serviceAccount.yaml
 apiVersion: v1

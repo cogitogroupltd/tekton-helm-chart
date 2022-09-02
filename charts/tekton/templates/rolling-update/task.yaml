@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: kubectl-restart-deployment
+  name: rolling-update
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/version: "0.2"
@@ -37,7 +37,7 @@ spec:
       type: string
       default: "arm64"
   steps:
-    - name: get-kubectl-and-run-command
+    - name: rolling-update
       image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
       script: |
         set -xe
