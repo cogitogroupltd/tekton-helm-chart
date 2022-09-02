@@ -29,13 +29,23 @@ cd examples/tekton-ecr-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
 
-## Run a pipeline via Trigger (requires security group rules to allow traffic from GitHub org, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
+## Run a pipeline via Trigger (requires additional configuration)
+
+- Open inbound firewall rules to allow traffic from GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
+- Open outbound firewall rules to allow traffic to GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
+- Uncomment `.Values.services` in `values-override.yaml` and alter certificate ARN to expose your `EventListener` to GitHub on HTTPS
+- Run install step above again and specify any `github_token` by replacing "ENTERTOKEN"
+- Create public DNS entry for your new LoadBalancer resource eg. tekton.cogitogroup.co.uk
+
+- Alter values in [_taskrun.yaml](../../charts/tekton/templates/create-webhook/_taskrun.yaml) according to your DNS entry, repository name.
+- Create the webhook in Github
 
 ```bash
-# Create the Github Webhook
 kubectl create -f ../../charts/tekton/templates/create-webhook/_taskrun.yaml
-# Trigger push event using `git push` to repository defined in git-clone ./values-override.yaml
 ```
+- Trigger push event using `git push` to repository defined in git-clone `./values-override.yaml` and 
+
+
 
 ## Uninstall
 

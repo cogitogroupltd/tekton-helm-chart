@@ -8,9 +8,10 @@ github_token:
 
 # Define variables used for both ecr-build-push and imagePullSecret in helm-deploy
 AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "009453609091"
-AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM_____REPLACE_ME_____RNSP5K"
-AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fk___________REPLACE_ME________cWjE2+2bgoWP+K"
+AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM32___REPLACE_ME__NSP5K"
+AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIuTS__REPLACE_ME__2cWjE2+2bgoWP+K"
 
+# Uncomment this to expose your EventListener to your GitHub webhook
 # services:
 # - name: webhook
 #   type: LoadBalancer

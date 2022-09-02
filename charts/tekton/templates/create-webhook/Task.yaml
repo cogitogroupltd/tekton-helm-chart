@@ -9,7 +9,9 @@ spec:
   - name: github-secret
     secret:
       secretName: $(params.GitHubSecretName)
-
+  description: >
+    Creates a Github Webhook in a specified repository in order to send GitHub events to EventListeners.
+    Run this Task if Pipelines need to be automatically triggered by any event.
   params:
   - name: ExternalDomain
     description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
