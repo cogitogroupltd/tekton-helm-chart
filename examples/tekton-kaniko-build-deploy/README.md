@@ -10,7 +10,7 @@ Description:
 - Deploys a single Tekton pipeline called `prod` using `./values-override.yaml`
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
-  - `build-push` - Build the Dockerfile and push it to Dockerhub using Kaniko using credentials specified in `config.json`
+  - `build-push` - Build the Dockerfile using Kaniko and push it to Dockerhub using Kaniko using credentials specified in `config.json`
   - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
   - `helm-deploy` - Deploy the docker image artifact from Dockerhub using Helm 
 - Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`

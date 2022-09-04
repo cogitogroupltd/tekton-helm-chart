@@ -10,7 +10,7 @@ Description:
 - Deploys a single Tekton pipeline called `prod` using `./values-override.yaml`
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
-  - `ecr-build-push` - Build the Dockerfile and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+  - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
   - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
   - `helm-deploy` - Deploy the docker image artifact from ECR using Helm 
 - Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
