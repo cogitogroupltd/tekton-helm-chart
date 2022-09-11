@@ -9,7 +9,7 @@ Successfully tested on:
 ToDo:
 - Move buildpush script to configMap
 - Create _taskRun output for custom-task
-
+- Add `steps` override in `taskcall` for `taskdefinition` 
 # Install Tekton
 
 
