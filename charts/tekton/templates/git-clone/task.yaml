@@ -1,4 +1,4 @@
-# https://hub.tekton.dev/tekton/task/git-clone
+#ref: https://hub.tekton.dev/tekton/task/git-clone
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:

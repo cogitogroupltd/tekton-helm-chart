@@ -10,20 +10,10 @@ spec:
   - name: git_revision
     value: master
   taskRunSpecs:
-    # - pipelineTaskName: kaniko-build
-    #   taskServiceAccountName: kaniko-build
     - pipelineTaskName: rolling-update
       taskServiceAccountName: rolling-update
   workspaces:
     - name: git-pvc
-      volumeClaimTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Gi
-    - name: image-cache
       volumeClaimTemplate:
         spec:
           accessModes:

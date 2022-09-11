@@ -1,4 +1,4 @@
-#ref: https://api.hub.tekton.dev/v1/resource/tekton/task/buildah/0.5/raw
+#ref: https://hub.tekton.dev/tekton/task/buildah
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -90,7 +90,7 @@ spec:
     - name: varlibcontainers
       mountPath: /var/lib/containers
     securityContext:
-      privileged: false
+      privileged: true
   volumes:
   - name: varlibcontainers
     emptyDir: {}
