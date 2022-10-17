@@ -1,5 +1,6 @@
 {{- if .Values.pipelines }}
 {{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
@@ -9,11 +10,19 @@ spec:
   params:
   - name: git_revision
 {{ with $value.trigger }}
-{{ if eq .eventType "pull_request" }}
+{{ if .eventTypes }}
+{{- range $event := .eventTypes }}
+{{ if eq $event "pull_request" }}
     value: $(body.pull_request.head.sha)
 {{ end }}
-{{ if eq .eventType "push" }}
+{{ end }}
+{{ end }}
+{{ if .eventTypes }}
+{{- range $event := .eventTypes }}
+{{ if eq $event "push" }}
     value: $(body.head_commit.id)
+{{ end }}
+{{ end }}
 {{ end }}
   - name: namespace
     value: default
@@ -21,6 +30,8 @@ spec:
     value: $(body.repository.html_url)
   - name: git_repository_name
     value: $(body.repository.name)
+  - name: git_branch_name
+    value: $(body.ref)
   - name: git_revision_owner
 {{ if eq .eventType "pull_request" }}
     value: $(body.pull_request.head.user.login)
@@ -30,5 +41,6 @@ spec:
 {{ end }}
 {{ end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}

@@ -1,6 +1,6 @@
 {{- if .Values.pipelines }}
 {{- range $value := .Values.pipelines }}
-{{ if $value.custom.enabled }}
+{{ if $value.custom }}
 {{- range $task := $value.custom.tasks }}
 apiVersion: tekton.dev/v1beta1
 kind: Task

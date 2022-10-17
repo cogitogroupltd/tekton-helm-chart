@@ -24,7 +24,7 @@ spec:
     metadata:
       generateName: {{ $value.name }}-$(uid)
     spec:
-      {{ if $value.custom.enabled }}
+      {{ if $value.custom }}
       {{- range $task := $value.custom.tasks -}}
       taskRunSpecs:
         - pipelineTaskName: {{ $task.name }}
@@ -37,21 +37,24 @@ spec:
         {{- end }}
       pipelineRef:
         name: {{ $value.name }}
-      # podTemplate:
-      #   securityContext:
-      #     runAsNonRoot: true
-      #     runAsUser: 1000920000
-      #     fsGroup: 1000920000
       serviceAccountNames:
-        {{ if $value.tasks }}
-        {{  with $value.tasks -}}
-        {{ if .deploy }}
-        - taskName: update-image
-          serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-default-sa"
+        {{ if $.Values.taskdefinitions.enabled }}
+        {{ range $task := $.Values.taskdefinitions.tasks }}
+        {{ if $task.serviceAccount }}
+        - taskName: {{ $task.name }} 
+          serviceAccountName: {{ $task.name }} 
         {{ end -}}
         {{- end -}}
         {{- end -}}
-        {{- if $value.custom.enabled -}}
+        {{- if $value.custom -}}
+        {{- range $task := $value.custom.tasks }}
+        - taskName: {{ $task.name }}
+        {{ if $value.custom.serviceAccounts }} 
+          serviceAccountName: {{ $task.name }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if $value.custom -}}
         {{- range $task := $value.custom.tasks }}
         - taskName: {{ $task.name }}
         {{ if $value.custom.serviceAccounts }} 

@@ -7,31 +7,20 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 spec:
   params:
-  - name: git_revision
-    description: The git revision
-    default: "master"
-  - name: git_revision_owner
-    description: The owner of the git revision
-    default: "git_owner_default_value"
-  - name: git_branch_name
-    description: The name of branch for the git revision
-    default: "git_branch_name_default_value"
-  - name: git_repository_name
-    description: The name of the git repository
-    default: "git_repository_name_default_value"
+{{ with $value.params }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
   workspaces:
-    - name: git-pvc
-    - name: image-cache
-    - name: ssh-creds
-    - name: docker-creds-cm
-    - name: kubeconfig
+{{ with $value.workspaces }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
   results:
 {{ with $value.results }}
 {{ . | toYaml | nindent 4 }}
 {{ end }}
   tasks:
 # Custom Tasks
-{{ if $value.custom.enabled }}
+{{ if $value.custom }}
 {{- range $task := $value.custom.tasks }}
     - name: {{ $task.name }}
       taskRef:
