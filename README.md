@@ -1,12 +1,22 @@
 # Helm chart for installing Tekton pipelines
+
+[Cogito Group's](https://cogitogroup.co.uk) cloud agnostic and generic Tekton Helm chart to install DevOps pipelines ontop of Kubernetes with **one** command. 
+
+Source repository https://github.com/cogitogroupltd/tekton-helm-chart
+
+
 <!-- vscode-markdown-toc -->
-1. [Todo](#Todo)
-2. [Summary](#Summary)
-	* 2.1. [Features](#Features)
-	* 2.2. [Successfully tested on](#Successfullytestedon)
-	* 2.3. [PreRequisties](#PreRequisties)
-	* 2.4. [Install Tekton](#InstallTekton)
-3. [Install pipelines examples](#Installpipelinesexamples)
+1. [Summary](#Summary)
+	* 1.1. [Features](#Features)
+	* 1.2. [Successfully tested on](#Successfullytestedon)
+	* 1.3. [PreRequisties](#PreRequisties)
+	* 1.4. [Install Tekton](#InstallTekton)
+2. [Install pipelines examples](#Installpipelinesexamples)
+	* 2.1. [Example 1 - Clone, build and push docker image to ECR using Docker-in-docker](#Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-docker)
+	* 2.2. [Example 2 - Clone, build and push docker image to Dockerhub using Kaniko](#Example2-ClonebuildandpushdockerimagetoDockerhubusingKaniko)
+	* 2.3. [Example 3 - Clone, build and push docker image to Dockerhub using Buildah](#Example3-ClonebuildandpushdockerimagetoDockerhubusingBuildah)
+3. [Todo](#Todo)
+4. [Troubleshooting](#Troubleshooting)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -14,33 +24,14 @@
 	/vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
-[Cogito Group's](https://cogitogroup.co.uk) cloud agnostic and generic Tekton Helm chart to install DevOps pipelines ontop of Kubernetes with **one** command. 
-
-Source repository https://github.com/cogitogroupltd/tekton-helm-chart
-
-See `raw-output.yaml` files for example outputted Kubernetes YAML and example command used to generate.
 
 
 
-##  1. <a name='Todo'></a>Todo
-- Create Incubator project https://github.com/helm/community/blob/main/incubator.md
-- Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
-- Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
-- Examples - Incorpoate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege 
-- Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
-- Move resource defs from eventListener
-- Remove dependency on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
-- Documentation for Windows
-- Test Documentation on WSL
-- Create output-raw.yaml for each pipeline run
-- Auto generate _taskRun.yaml for custom-task in helm output via Notes.txt
-- Auto generate a _pipelineRun.yaml for each pipeline in helm output via Notes.txt
-- Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
 
-##  2. <a name='Summary'></a>Summary
+##  1. <a name='Summary'></a>Summary
 
 
-###  2.1. <a name='Features'></a>Features
+###  1.1. <a name='Features'></a>Features
 
 - Values.yaml driven pipeline development 
 - Dynamic task generation
@@ -48,7 +39,7 @@ See `raw-output.yaml` files for example outputted Kubernetes YAML and example co
 - Create/Delete Github webhook tasks
 
 
-###  2.2. <a name='Successfullytestedon'></a>Successfully tested on
+###  1.2. <a name='Successfullytestedon'></a>Successfully tested on
 
  - AWS EKS > v1.22
  - OpenShift ROSA (OKD4)
@@ -59,57 +50,20 @@ See `raw-output.yaml` files for example outputted Kubernetes YAML and example co
  - Google Kubernetes Engine (GKE)
 
 
-###  2.3. <a name='PreRequisties'></a>PreRequisties 
+###  1.3. <a name='PreRequisties'></a>PreRequisties 
 
 In order to install the Tekton Helm chart you will need a Kubernetes cluster > v1.22 and the below tools
 
-- Kubernetes cluster (optional, see [kind.md](./kind.md) for deploying a local Kind cluster)
+- Kubernetes cluster (optional, see [kind.md](./docs/kind.md) for deploying a local Kind cluster)
 - Kubectl > v1.22
 - Helm > v3.0
 - AWS (optional, required for some examples)
 - Docker (optional, required for running local Kubernetes Kind cluster and building/pushing images)
 
-
-- MacOS
-
-
-```bash
-brew install kubectl
-brew install helm
-
-# AWS cli
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-```
-
-- Windows - Windows subsystem for Linux (WSL)
-
-```bash
-
-# Kubectl
-curl -LO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-sudo apt-get update
-
-# helm
-sudo apt-key add -
-sudo apt-get install apt-transport-https --yes
-echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-sudo apt-get update
-sudo apt-get install helm
-
-# AWS cli
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-rm -fr awscliv2.zip
-rm -fr ./aws
-```
+See [prereqs.md](./prereqs.md)
 
 
-
-###  2.4. <a name='InstallTekton'></a>Install Tekton
+###  1.4. <a name='InstallTekton'></a>Install Tekton
 
 ```bash
 # Install pipeline CRD
@@ -132,7 +86,7 @@ kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-dashboa
 
 ```
 
-- Expose the Tekton dashboard via Kind NodePort, must have installed using [cluster.yaml](./cluster.yaml) in [kind.md](./kind.md)
+- Expose the Tekton dashboard via Kind NodePort, must have installed using [cluster.yaml](./cluster.yaml) in [kind.md](./docs/kind.md)
 
 ```bash
 kubectl delete service tekton-dashboard -n tekton-pipelines
@@ -153,18 +107,46 @@ Navigate to Tekton Dashboard at http://localhost:8887
 
 NOTE: The Tekton dashboard has a tendency to drop whilst using port-forwarding, to work around this hit CTRL+C and rerun the port forward command above. 
 
-##  3. <a name='Installpipelinesexamples'></a>Install pipelines examples
+##  2. <a name='Installpipelinesexamples'></a>Install pipelines examples
+
+See `raw-output.yaml` files for example outputted Kubernetes YAML and example command used to generate.
+
+
+
+###  2.1. <a name='Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-docker'></a>Example 1 - Clone, build and push docker image to ECR using Docker-in-docker
 
 See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
 
-- Example 1 - Clone, build and push docker image to ECR using Docker-in-docker
-
 ![](./examples/tekton-ecr-build-deploy/2022-10-17-23-18-35.png)
 
-- Example 2 - Clone, build and push docker image to Dockerhub using Kaniko
+###  2.2. <a name='Example2-ClonebuildandpushdockerimagetoDockerhubusingKaniko'></a>Example 2 - Clone, build and push docker image to Dockerhub using Kaniko
 
-![](./examples/tekton-ecr-build-deploy/2022-10-17-23-36-33.png)
+See example [README.md](./examples/tekton-kaniko-build-deploy/README.md)
 
-- Example 3 - Clone, build and push docker image to Dockerhub using Buildah
+![](./examples/tekton-kaniko-build-deploy/2022-10-17-23-36-33.png)
+
+###  2.3. <a name='Example3-ClonebuildandpushdockerimagetoDockerhubusingBuildah'></a>Example 3 - Clone, build and push docker image to Dockerhub using Buildah
+
+See example [README.md](./examples/tekton-buildah-build-deploy/README.md)
 
 ![](./examples/tekton-buildah-build-deploy/2022-10-18-00-06-27.png)
+
+
+
+##  3. <a name='Todo'></a>Todo
+- Create Incubator project https://github.com/helm/community/blob/main/incubator.md
+- Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
+- Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
+- Examples - Incorpoate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege 
+- Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
+- Move resource defs from eventListener
+- Remove dependency on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
+- Documentation for Windows
+- Test Documentation on WSL
+- Create output-raw.yaml for each pipeline run
+- Auto generate _taskRun.yaml for custom-task in helm output via Notes.txt
+- Auto generate a _pipelineRun.yaml for each pipeline in helm output via Notes.txt
+- Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
+##  4. <a name='Troubleshooting'></a>Troubleshooting
+
+See [FAQ.md](./docs/FAQ.md) or our [blog](https://cogitogroup.co.uk/blog)
