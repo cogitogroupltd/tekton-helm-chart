@@ -19,12 +19,19 @@ configmap_kube_conf: kube-config
 # Global webhook secret, this can be overriden in pipelines[0].trigger.token
 github_token: 
 
-# Define tasks in-line here to be used by taskcalls in multiple pipelines, see examples for usage
+# Define tasks in-line here to be used by taskcalls in multiple pipelines, see examples directory for usage
 taskdefinitions:
   enabled: false
 
+
 # Call a task definition or a task dropped in at templates/
-taskcalls:
+# Example taskcall 
+# pipelines:
+#   - name: dummy
+#     taskcalls:
+#     - name: ecr-build-push
+#       taskRef:
+#         name: ecr-build-push
 
 
 # A custom task is declared and used on-the-fly inside a pipeline. Names for custom tasks must be unique across all pipelines.

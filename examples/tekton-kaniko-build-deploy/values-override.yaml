@@ -2,7 +2,6 @@ secret_ssh_key:
 secret_ssh_cred: ssh-key
 secret_docker_conf: docker-config
 docker_config_json: 
-configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
 
 taskdefinitions:
@@ -49,7 +48,6 @@ pipelines:
       - name: image-cache
       - name: ssh-creds
       - name: docker-creds-cm
-      - name: kubeconfig
     trigger:
       eventTypes: [ "pull_request" ]
       eventActions: "['opened','synchronize','reopened']"
@@ -102,6 +100,3 @@ pipelines:
         value: docker-nginx-hello-world
       runAfter:
       - kaniko-build
-      workspaces:
-      - name: kubeconfig-dir
-        workspace: kubeconfig
