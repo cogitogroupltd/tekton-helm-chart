@@ -59,6 +59,16 @@ kubectl create -f ../../charts/tekton/templates/create-webhook/_taskrun.yaml
 ```
 - Trigger push event using `git push` to repository defined in git-clone `./values-override.yaml` and 
 
+or 
+
+- Use an example github payload to test triggers locally (see Github -> Settings -> Webhooks -> Recent Deliveries) to export ane example `payload.json` (NOTE: This will not work if you have a webhook token setup and specified in `.Values.pipelines[0].trigger.token` )
+
+```bash
+kubectl run debug-pod --image=nginx 
+kubectl cp payload.json debug-pod:/root/payload.json
+kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.tekton-pipelines.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
+```
+
 
 
 ## Uninstall
