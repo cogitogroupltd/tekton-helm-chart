@@ -1,10 +1,12 @@
 # Helm chart for installing Tekton pipelines
 <!-- vscode-markdown-toc -->
 1. [Todo](#Todo)
-2. [Summary:](#Summary:)
-	* 2.1. [PreRequisties:](#PreRequisties:)
-	* 2.2. [Install Tekton](#InstallTekton)
-3. [Example pipeline installation](#Installpipelinesexamples)
+2. [Summary](#Summary)
+	* 2.1. [Features](#Features)
+	* 2.2. [Successfully tested on](#Successfullytestedon)
+	* 2.3. [PreRequisties](#PreRequisties)
+	* 2.4. [Install Tekton](#InstallTekton)
+3. [Install pipelines examples](#Installpipelinesexamples)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -35,21 +37,19 @@ See `raw-output.yaml` files for example outputted Kubernetes YAML and example co
 - Auto generate a _pipelineRun.yaml for each pipeline in helm output via Notes.txt
 - Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
 
-##  2. <a name='Summary:'></a>Summary: 
+##  2. <a name='Summary'></a>Summary
 
-- Prerequisites
-- Install Tekton
-- Deploy Github webhooks (optional)
-- Install Tekton Helm chart
 
-Features:
+###  2.1. <a name='Features'></a>Features
+
 - Values.yaml driven pipeline development 
 - Dynamic task generation
 - Least-privilege with isolated permissions for each task run
 - Create/Delete Github webhook tasks
 
 
-Successfully tested on:
+###  2.2. <a name='Successfullytestedon'></a>Successfully tested on
+
  - AWS EKS > v1.22
  - OpenShift ROSA (OKD4)
  - Openshift OKD3
@@ -59,7 +59,7 @@ Successfully tested on:
  - Google Kubernetes Engine (GKE)
 
 
-###  2.1. <a name='PreRequisties:'></a>PreRequisties: 
+###  2.3. <a name='PreRequisties'></a>PreRequisties 
 
 In order to install the Tekton Helm chart you will need a Kubernetes cluster > v1.22 and the below tools
 
@@ -109,7 +109,7 @@ rm -fr ./aws
 
 
 
-###  2.2. <a name='InstallTekton'></a>Install Tekton
+###  2.4. <a name='InstallTekton'></a>Install Tekton
 
 ```bash
 # Install pipeline CRD
