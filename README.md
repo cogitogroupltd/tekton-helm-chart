@@ -147,6 +147,10 @@ See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
 
 ![](./examples/tekton-ecr-build-deploy/2022-10-17-23-18-35.png)
 
-- Example 1 - Clone, build and push docker image to Dockerhub using Kaniko
+- Example 2 - Clone, build and push docker image to Dockerhub using Kaniko
 
 ![](./examples/tekton-ecr-build-deploy/2022-10-17-23-36-33.png)
+
+- Example 3 - Clone, build and push docker image to Dockerhub using Buildah
+
+![](./examples/tekton-buildah-build-deploy/2022-10-18-00-06-27.png)
