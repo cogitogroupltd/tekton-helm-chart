@@ -1,3 +1,7 @@
+
+
+WARNING: This method of building images in Kubernetes is DEPRECIATED, Kubernetes will be dropping support for Docker in future versions. Please see Kaniko build [example](../tekton-kaniko-build-deploy/README.md).
+
 # Tekton pipeline to build and push docker image to ECR and use Helm to deploy
 
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
@@ -10,18 +14,19 @@ Description:
 - Deploys a single Tekton pipeline called `prod` using `./values-override.yaml`
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
-  - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+  - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. The default will push to an ECR repository called "test"
   - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
-  - `helm-deploy` - Deploy the docker image artifact from ECR using Helm 
+  - `helm-deploy` - Deploy the docker image artifact from ECR using Helm to the cluster where Tekton is installed
 - Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
 - Secures webhook to `EventListener` communication using a token specified in `.Values.github_token`
 
+![](2022-10-17-23-18-35.png)
 
-## Install
+## Install the pipeline
 
 ```bash
 cd examples/tekton-ecr-build-deploy
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
 ```
 
 ## Run a pipeline manually

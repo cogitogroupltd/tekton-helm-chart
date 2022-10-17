@@ -11,7 +11,7 @@ AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "009453609091"
 AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM32UCBS2RNSP5K"
 AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIuTS1HDcqfNT9v/TOEb2cWjE2+2bgoWP+K"
 
-# Uncomment this to expose your EventListener to your GitHub webhook
+# Uncomment this to expose your EventListener to your GitHub 
 # services:
 # - name: webhook
 #   type: LoadBalancer
@@ -75,7 +75,7 @@ taskdefinitions:
   - name: ecr-build-push
     clusterAdmin: false
     description: >-
-      This task does a AWS CLI command to login to ECR
+      This task does a AWS CLI command to login to ECR, builds the docker image and pushes it to ECR
     podTemplate:
       tolerations:
         - key: "name"
@@ -83,9 +83,6 @@ taskdefinitions:
           value: "infra"
           effect: "NoSchedule"
     volumes:
-    - name: aws
-      secret:
-        secretName: aws
     - name: docker
       hostPath:
         path: /var/run/docker.sock
@@ -131,16 +128,17 @@ taskdefinitions:
       volumeMounts:
       - name: docker
         mountPath: /var/run/docker.sock
-      - name: aws
-        mountPath: /root/.aws
       env:
       - name: location
         value: $(params.location)
+      - name: AWS_ACCESS_KEY_ID
+        value: $(params.AWS_ACCESS_KEY_ID)
+      - name: AWS_SECRET_ACCESS_KEY
+        value: $(params.AWS_SECRET_ACCESS_KEY)
       script: |
         set -x 
         set -e
         # Build image
-        export AWS_PROFILE=GEN
         aws ecr get-login-password --region $(params.AWS_REGION) | docker login --username AWS --password-stdin "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com"
         docker build --network=host -t "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)" "$location" --build-arg NPM_TOKEN="${NPM_TOKEN}"
         docker push "$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)"  
@@ -202,6 +200,25 @@ taskdefinitions:
 
 pipelines:
   - name: prod
+    params:
+    - name: git_revision
+      description: The git revision
+      default: "master"
+    - name: git_revision_owner
+      description: The owner of the git revision
+      default: "git_owner_default_value"
+    - name: git_branch_name
+      description: The name of branch for the git revision
+      default: "git_branch_name_default_value"
+    - name: git_repository_name
+      description: The name of the git repository
+      default: "git_repository_name_default_value"
+    workspaces:
+      - name: git-pvc
+      - name: image-cache
+      - name: ssh-creds
+      - name: docker-creds-cm
+      - name: kubeconfig
     trigger:
       git_revisions: ['refs/heads/master']
       eventTypes: ["push"]
@@ -289,5 +306,3 @@ pipelines:
         value: $(params.git_revision)
       - name: stage
         value: "prod"
-    custom:
-      enabled: false

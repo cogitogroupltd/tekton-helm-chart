@@ -1,7 +1,17 @@
+# Run a nightly cronjob to clean up old PVCs
+cleanup_cronjob: 
+  enabled: true
+
 secret_ssh_cred: ssh-key
 secret_ssh_key:
+
+# Name of secret to store docker credentials
 secret_slack_webhook: webhook-secret
+
+# Set a SLACK_WEBHOOK_URI to post updates for each stage, see send-to-webhook-slack task
 secret_slack_webhook_uri: 
+
+# Name of secret to store docker credentials
 secret_docker_conf: docker-config
 docker_config_json: 
 configmap_kube_conf: kube-config
@@ -9,7 +19,7 @@ configmap_kube_conf: kube-config
 # Global webhook secret, this can be overriden in pipelines[0].trigger.token
 github_token: 
 
-# Define tasks in-line here to be used by taskcalls in multiple pipelines 
+# Define tasks in-line here to be used by taskcalls in multiple pipelines, see examples for usage
 taskdefinitions:
   enabled: false
 
@@ -22,7 +32,6 @@ taskcalls:
 # pipelines:
 # - name: dummy
 #     custom:
-#       enabled: true
 #       serviceAccounts:
 #       - name: kubectl-get-pods
 #         yaml: |-

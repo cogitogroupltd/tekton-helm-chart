@@ -1,16 +1,24 @@
-# Tekton pipelines Helm Chart
+<!-- vscode-markdown-toc -->
+* 1. [Install Tekton](#InstallTekton)
+* 2. [Example pipeline installations](#Examplepipelineinstallations)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc --># Tekton pipelines Helm Chart
+
+
 
 Successfully tested on:
- - AWS EKS using NLB and ALB
+ - AWS Elastic Kubernetes Services using NLB and ALB (AWS EKS v1.24)
  - Kind [download](https://kind.sigs.k8s.io/)
  - Rancher K3s 
  - Google Kubernetes Engine (GKE)
+ - RedHat OpenShift AWS (ROSA)
+ - RedHat Origin Kubernetes Distribution (OKD v4.0)
 
-ToDo:
-- Move buildpush script to configMap
-- Create _taskRun output for custom-task
-- Add `steps` override in `taskcall` for `taskdefinition` 
-# Install Tekton
+##  1. <a name='InstallTekton'></a>Install Tekton
 
 
 - Installl Tekton system components
@@ -54,6 +62,6 @@ See [docker/cicd-agent/README.md](../../docker/cicd-agent/README.md)
 - Open browser and navigate to http://localhost:8887
 
 
-## Example pipeline installations
+##  2. <a name='Examplepipelineinstallations'></a>Example pipeline installations
 
-See ./examples
+See [./examples](./examples)
