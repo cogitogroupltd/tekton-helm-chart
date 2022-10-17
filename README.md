@@ -1,4 +1,16 @@
 # Helm chart for installing Tekton pipelines
+<!-- vscode-markdown-toc -->
+1. [Todo](#Todo)
+2. [Summary:](#Summary:)
+	* 2.1. [PreRequisties:](#PreRequisties:)
+	* 2.2. [Install Tekton](#InstallTekton)
+3. [Example pipeline installation](#Installpipelinesexamples)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 
 [Cogito Group's](https://cogitogroup.co.uk) cloud agnostic and generic Tekton Helm chart to install DevOps pipelines ontop of Kubernetes with **one** command. 
 
@@ -6,7 +18,9 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 See `raw-output.yaml` files for example outputted Kubernetes YAML and example command used to generate.
 
-## ToDo
+
+
+##  1. <a name='Todo'></a>Todo
 - Create Incubator project https://github.com/helm/community/blob/main/incubator.md
 - Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
 - Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
@@ -21,7 +35,7 @@ See `raw-output.yaml` files for example outputted Kubernetes YAML and example co
 - Auto generate a _pipelineRun.yaml for each pipeline in helm output via Notes.txt
 - Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
 
-## Contents: 
+##  2. <a name='Summary:'></a>Summary: 
 
 - Prerequisites
 - Install Tekton
@@ -45,7 +59,7 @@ Successfully tested on:
  - Google Kubernetes Engine (GKE)
 
 
-### PreRequisties: 
+###  2.1. <a name='PreRequisties:'></a>PreRequisties: 
 
 In order to install the Tekton Helm chart you will need a Kubernetes cluster > v1.22 and the below tools
 
@@ -95,7 +109,7 @@ rm -fr ./aws
 
 
 
-### Install Tekton
+###  2.2. <a name='InstallTekton'></a>Install Tekton
 
 ```bash
 # Install pipeline CRD
@@ -139,7 +153,7 @@ Navigate to Tekton Dashboard at http://localhost:8887
 
 NOTE: The Tekton dashboard has a tendency to drop whilst using port-forwarding, to work around this hit CTRL+C and rerun the port forward command above. 
 
-## Install pipelines examples
+##  3. <a name='Installpipelinesexamples'></a>Install pipelines examples
 
 See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
 
