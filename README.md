@@ -11,6 +11,7 @@ See `raw-output.yaml` files for example outputted Kubernetes YAML and example co
 - Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
 - Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
 - Examples - Incorpoate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege 
+- Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
 - Move resource defs from eventListener
 - Remove dependency on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
 - Documentation for Windows
@@ -138,34 +139,14 @@ Navigate to Tekton Dashboard at http://localhost:8887
 
 NOTE: The Tekton dashboard has a tendency to drop whilst using port-forwarding, to work around this hit CTRL+C and rerun the port forward command above. 
 
-### Install pipelines
+## Install pipelines examples
 
+See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
 
-- Example 1 - Clone, build and push docker image
+- Example 1 - Clone, build and push docker image to ECR using Docker-in-docker
 
-NOTE: Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
+![](./examples/tekton-ecr-build-deploy/2022-10-17-23-18-35.png)
 
-```bash
+- Example 1 - Clone, build and push docker image to Dockerhub using Kaniko
 
-# Deploy Tekton pipeline helm chart
-export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-docker_auth=$(echo -n george7522:somepass! | base64)
-tee "config.json" > /dev/null <<EOF
-{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"ignored@email.com"}}}
-EOF
-kubectl wait --for=condition=ready pod -n tekton-pipelines -l app=tekton-pipelines-controller
-helm upgrade --install pipelines ./charts/tekton --namespace tekton-pipelines --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} 
-
-```
-
-- 
-
-```bash
-# Create a pipeline run
-kubectl create -f ./charts/tekton/templates/_pipelinerun.yaml 
-#or using webhook listener, example payload.json supplied.
-# Install sample app to deploy to with Tekton
-kubectl run debug-pod --image=nginx 
-kubectl cp payload.json debug-pod:/root/payload.json
-kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.default.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
-```
+![](./examples/tekton-ecr-build-deploy/2022-10-17-23-36-33.png)
