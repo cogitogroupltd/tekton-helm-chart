@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cronjob-tekton-cleanup
+  name: {{ .Release.Name }}-tekton-cleanup
   namespace: {{ .Release.Namespace }}
 spec:
   schedule: "30 2 * * *"
@@ -13,7 +13,7 @@ spec:
       completions: 2
       template:
         spec:
-          serviceAccountName: "cronjob-tekton-cleanup"
+          serviceAccountName: "{{ .Release.Name }}-tekton-cleanup"
           containers:
           - name: main
             image: bitnami/kubectl
@@ -27,13 +27,13 @@ spec:
             - name: configmap
               configMap:
                 defaultMode: 0777
-                name: cronjob-tekton-cleanup-cm
+                name: {{ .Release.Name }}-tekton-cleanup-cm
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-  name: cronjob-tekton-cleanup-cm
+  name: {{ .Release.Name }}-tekton-cleanup-cm
   namespace: {{ .Release.Namespace }}
 data:
   runtimeConfig.sh: |
@@ -45,7 +45,7 @@ metadata:
   name: "cluster-administrator-tekton-cronjob"
 subjects:
   - kind: ServiceAccount
-    name: "cronjob-tekton-cleanup"
+    name: "{{ .Release.Name }}-tekton-cleanup"
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
@@ -55,7 +55,7 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: "cronjob-tekton-cleanup"
+  name: "{{ .Release.Name }}-tekton-cleanup"
   namespace: {{ .Release.Namespace }}
 ---
 {{ end }}
