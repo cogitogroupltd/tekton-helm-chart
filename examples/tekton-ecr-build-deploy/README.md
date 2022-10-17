@@ -18,7 +18,6 @@ Description:
   - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
   - `helm-deploy` - Deploy the docker image artifact from ECR using Helm to the cluster where Tekton is installed
 - Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
-- Secures webhook to `EventListener` communication using a token specified in `.Values.github_token`
 
 ![](2022-10-17-23-18-35.png)
 

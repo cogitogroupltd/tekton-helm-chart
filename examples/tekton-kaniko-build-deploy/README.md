@@ -11,10 +11,8 @@ Description:
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
   - `build-push` - Build the Dockerfile using Kaniko and push it to Dockerhub using Kaniko using credentials specified in `config.json`
-  - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
-  - `helm-deploy` - Deploy the docker image artifact from Dockerhub using Helm 
+  - `rolling-update` - Deploy the docker image artifact to your existing Kubernetes deployment
 - Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
-- Secures webhook to `EventListener` communication using a token specified in `.Values.github_token`
 
 ![](2022-10-17-23-36-33.png)
 ## Install pipelines
@@ -22,7 +20,11 @@ Description:
 
 - Deploy Tekton pipeline helm chart (NOTE: replace credentials)
 
-Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+NOTE:
+
+- Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+
+- Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
 
 ```bash
 
