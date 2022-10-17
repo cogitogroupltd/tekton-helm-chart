@@ -1,6 +1,6 @@
 
 
-WARNING: This method of building images in Kubernetes is DEPRECIATED, Kubernetes will be dropping support for Docker in future versions. Please see Kaniko build [example](../tekton-kaniko-build-deploy/README.md).
+WARNING: This method of building images in Kubernetes is DEPRECIATED, Kubernetes will be dropping support for Docker in future versions. Please see Kaniko build [example](../tekton-kaniko-build-deploy/README.md) or Buildah build [example](../tekton-buildah-build-deploy/README.md)
 
 # Tekton pipeline to build and push docker image to ECR and use Helm to deploy
 
@@ -26,8 +26,18 @@ Description:
 
 Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
 
+NOTE:
+
+- Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+
+- Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
+
 ```bash
 cd examples/tekton-ecr-build-deploy
+docker_auth=$(echo -n george7522:somepass! | base64)
+tee "config.json" > /dev/null <<EOF
+{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
+EOF
 helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
 ```
 

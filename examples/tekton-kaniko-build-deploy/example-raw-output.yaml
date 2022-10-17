@@ -1,5 +1,16 @@
-# This file is generated Generated with command
-# helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="f" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug --create-namespace > example-raw-output.yaml
+# Base64 secrets have been redacted from this file
+#docker_auth=$(echo -n george7522:somepass! | base64)
+#tee "config.json" > /dev/null <<EOF
+#{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
+#EOF
+#helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml > example-raw-output.yaml       
+---
+# Source: pipeline/templates/cronjob.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "pipelines-tekton-cleanup"
+  namespace: tekton-pipelines
 ---
 # Source: pipeline/templates/global/serviceAccount.yaml
 apiVersion: v1
@@ -7,7 +18,7 @@ kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-default-sa"
 ---
-# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+# Source: pipeline/templates/task-definition/serviceAccount.yaml
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -61,7 +72,18 @@ type: Opaque
 data:
   token: 
 ---
-# Source: pipeline/templates/kubectl-restart-deployment/cm-kubeconfig.yaml
+# Source: pipeline/templates/cronjob.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+  name: pipelines-tekton-cleanup-cm
+  namespace: tekton-pipelines
+data:
+  runtimeConfig.sh: |
+    kubectl get pvc -n tekton-pipelines | awk '{print $1}' | xargs kubectl delete pvc -n tekton-pipelines
+---
+# Source: pipeline/templates/rolling-update/cm-kubeconfig.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -132,6 +154,20 @@ rules:
   - list
   - watch
 ---
+# Source: pipeline/templates/cronjob.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "cluster-administrator-tekton-cronjob"
+subjects:
+  - kind: ServiceAccount
+    name: "pipelines-tekton-cleanup"
+    namespace: tekton-pipelines
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
 # Source: pipeline/templates/global/clusterRoleBinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -146,7 +182,7 @@ roleRef:
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: pipeline/templates/task-definitions/serviceAccount.yaml
+# Source: pipeline/templates/task-definition/serviceAccount.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -225,6 +261,40 @@ roleRef:
   kind: Role
   name: "pipelines-tekton-triggers-role"
 ---
+# Source: pipeline/templates/cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pipelines-tekton-cleanup
+  namespace: tekton-pipelines
+spec:
+  schedule: "30 2 * * *"
+  startingDeadlineSeconds: 20
+  successfulJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      completions: 2
+      template:
+        spec:
+          serviceAccountName: "pipelines-tekton-cleanup"
+          containers:
+          - name: main
+            image: bitnami/kubectl
+            command: ["sh", "-c"]
+            args: ["/configmap/runtimeConfig.sh"]
+            volumeMounts:
+            - name: configmap
+              mountPath: /configmap
+          restartPolicy: Never
+          volumes:
+            - name: configmap
+              configMap:
+                defaultMode: 0777
+                name: pipelines-tekton-cleanup-cm
+---
+# Source: pipeline/templates/buildah-build/Task.yaml
+#ref: https://hub.tekton.dev/tekton/task/buildah
+---
 # Source: pipeline/templates/custom-task/serviceAccount.yaml
 ---
 ---
@@ -282,24 +352,30 @@ metadata:
   namespace: tekton-pipelines
 spec:
   params:
-  - name: git_revision
-    description: The git revision
-    default: "master"
-  - name: git_revision_owner
-    description: The owner of the git revision
-    default: "git_owner_default_value"
-  - name: git_branch_name
-    description: The name of branch for the git revision
-    default: "git_branch_name_default_value"
-  - name: git_repository_name
-    description: The name of the git repository
-    default: "git_repository_name_default_value"
+
+
+    - default: master
+      description: The git revision
+      name: git_revision
+    - default: git_owner_default_value
+      description: The owner of the git revision
+      name: git_revision_owner
+    - default: git_branch_name_default_value
+      description: The name of branch for the git revision
+      name: git_branch_name
+    - default: git_repository_name_default_value
+      description: The name of the git repository
+      name: git_repository_name
+
   workspaces:
+
+
     - name: git-pvc
     - name: image-cache
     - name: ssh-creds
     - name: docker-creds-cm
     - name: kubeconfig
+
   results:
 
   tasks:
@@ -320,23 +396,7 @@ spec:
 
       params:
       - name: url
-        value: "git@github.com:dockerised/docker-anyconnect-vpn.git"
-      - name: revision
-        value: "$(params.git_revision)"
-    - name: git-clone-infra
-      taskRef:
-        name: git-clone
-      runAfter: [kaniko-build]
-      workspaces:
-
-      - name: ssh-directory
-        workspace: ssh-creds
-      - name: output
-        workspace: git-pvc
-
-      params:
-      - name: url
-        value: "git@github.com:dockerised/docker-anyconnect-vpn.git"
+        value: "git@github.com:dockerised/docker-nginx-hello-world"
       - name: revision
         value: "$(params.git_revision)"
     - name: kaniko-build
@@ -354,13 +414,13 @@ spec:
       - name: DOCKER_REGISTRY
         value: "george7522"
       - name: DOCKER_REPOSITORY
-        value: "docker-anyconnect-vpn"
+        value: "docker-nginx-hello-world"
       - name: DOCKER_IMAGE_TAG
         value: "$(params.git_revision)"
     - name: rolling-update
       taskRef:
         name: rolling-update
-      runAfter: [git-clone-infra]
+      runAfter: [kaniko-build]
       workspaces:
 
       - name: kubeconfig-dir
@@ -378,7 +438,7 @@ spec:
       - name: docker_registry
         value: "george7522"
       - name: docker_repository
-        value: "docker-anyconnect-vpn"
+        value: "docker-nginx-hello-world"
 # / Global Task calling
 ---
 # Source: pipeline/templates/buildah-build/Task.yaml
@@ -386,111 +446,96 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: buildah-build
+  labels:
+    app.kubernetes.io/version: "0.5"
+  annotations:
+    tekton.dev/categories: Image Build
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/tags: image-build
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
 spec:
   description: >-
-    s2i-java-11 task clones a Git repository and builds and pushes a container
-    image using S2I and a Java 11 builder image.
+    Buildah task builds source into a container image and
+    then pushes it to a container registry.
+
+    Buildah Task builds source into a container image using Project Atomic's
+    Buildah build tool.It uses Buildah's support for building from Dockerfiles,
+    using its buildah bud command.This command executes the directives in the
+    Dockerfile to assemble a container image, then pushes that image to a
+    container registry.
+
   params:
-    - default: .
-      description: The location of the path to run s2i from
-      name: PATH_CONTEXT
-      type: string
-    - default: 'true'
-      description: >-
-        Verify the TLS on the registry endpoint (for push/pull to a non-TLS
-        registry)
-      name: TLSVERIFY
-      type: string
-    - default: ''
-      description: Additional Maven arguments
-      name: MAVEN_ARGS_APPEND
-      type: string
-    - default: 'false'
-      description: Remove the Maven repository after the artifact is built
-      name: MAVEN_CLEAR_REPO
-      type: string
-    - default: ''
-      description: The base URL of a mirror used for retrieving artifacts
-      name: MAVEN_MIRROR_URL
-      type: string
-    - description: Location of the repo where image has to be pushed
-      name: IMAGE_NAME
-      type: string
-    - description: The tag of the image to be pushed
-      name: IMAGE_TAG
-      type: string
-      default: "latest"
-  steps:
-    - name: build
-      workingDir: $(workspaces.source.path)
-      command:
-        - buildah
-        - bud
-        - '--storage-driver=vfs'
-        - '--tls-verify=$(params.TLSVERIFY)'
-        - '--layers'
-        - '-f'
-        - /gen-source/Dockerfile
-        - '-t'
-        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-        - '-t'
-        - $(params.IMAGE_NAME):latest
-        - .
-      image: >-
-        registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
-      resources: {}
-      volumeMounts:
-        - mountPath: /var/lib/containers
-          name: varlibcontainers
-        - mountPath: /gen-source
-          name: gen-source
-      workingDir: /gen-source
-    - command:
-        - buildah
-        - push
-        - '--storage-driver=vfs'
-        - '--tls-verify=$(params.TLSVERIFY)'
-        - --digestfile
-        - $(workspaces.source.path)/image-digest
-        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-        - 'docker://$(params.IMAGE_NAME):$(params.IMAGE_TAG)'
-      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
-      name: push-tag
-      resources: {}
-      volumeMounts:
-        - mountPath: /var/lib/containers
-          name: varlibcontainers
-    - command:
-        - buildah
-        - push
-        - '--storage-driver=vfs'
-        - '--tls-verify=$(params.TLSVERIFY)'
-        - --digestfile
-        - $(workspaces.source.path)/image-digest
-        - $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-        - 'docker://$(params.IMAGE_NAME):latest'
-      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
-      name: push-latest
-      resources: {}
-      volumeMounts:
-        - mountPath: /var/lib/containers
-          name: varlibcontainers
-    - name: digest-to-results
-      image: registry.redhat.io/rhel8/buildah@sha256:180c4d9849b6ab0e5465d30d4f3a77765cf0d852ca1cb1efb59d6e8c9f90d467
-      script: cat $(workspaces.source.path)/image-digest | tee /tekton/results/IMAGE_DIGEST
-  volumes:
-    - emptyDir: {}
-      name: varlibcontainers
-    - emptyDir: {}
-      name: gen-source
-    - emptyDir: {}
-      name: envparams
+  - name: IMAGE
+    description: Reference of the image buildah will produce.
+  - name: BUILDER_IMAGE
+    description: The location of the buildah builder image.
+    default: quay.io/buildah/stable:v1.23.3
+  - name: STORAGE_DRIVER
+    description: Set buildah storage driver
+    default: overlay
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build.
+    default: ./Dockerfile
+  - name: CONTEXT
+    description: Path to the directory to use as context.
+    default: .
+  - name: TLSVERIFY
+    description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+    default: "true"
+  - name: FORMAT
+    description: The format of the built container, oci or docker
+    default: "oci"
+  - name: BUILD_EXTRA_ARGS
+    description: Extra parameters passed for the build command when building images.
+    default: ""
+  - name: PUSH_EXTRA_ARGS
+    description: Extra parameters passed for the push command when pushing images.
+    type: string
+    default: ""
+  - name: SKIP_PUSH
+    description: Skip pushing the built image
+    default: "false"
   workspaces:
   - name: source
-    description: Holds the context and docker file
+  - name: sslcertdir
+    optional: true
+  - name: dockerconfig
+    description: >-
+      An optional workspace that allows providing a .docker/config.json file
+      for Buildah to access the container registry.
+      The file should be placed at the root of the Workspace with name config.json.
+    optional: true
   results:
   - name: IMAGE_DIGEST
     description: Digest of the image just built.
+  - name: IMAGE_URL
+    description: Image repository where the built image would be pushed to
+  steps:
+  - name: build
+    image: $(params.BUILDER_IMAGE)
+    workingDir: $(workspaces.source.path)
+    script: |
+      [[ "$(workspaces.sslcertdir.bound)" == "true" ]] && CERT_DIR_FLAG="--cert-dir $(workspaces.sslcertdir.path)"
+      buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) bud \
+        $(params.BUILD_EXTRA_ARGS) --format=$(params.FORMAT) \
+        --tls-verify=$(params.TLSVERIFY) --no-cache \
+        -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
+      [[ "$(params.SKIP_PUSH)" == "true" ]] && echo "Push skipped" && exit 0
+      [[ "$(workspaces.dockerconfig.bound)" == "true" ]] && export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+      buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) push \
+        $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
+        --digestfile /tmp/image-digest $(params.IMAGE) \
+        docker://$(params.IMAGE)
+      cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
+      echo "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    securityContext:
+      privileged: true
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
 ---
 # Source: pipeline/templates/create-webhook/Task.yaml
 apiVersion: tekton.dev/v1beta1
@@ -697,7 +742,7 @@ spec:
       EOF
 ---
 # Source: pipeline/templates/git-clone/task.yaml
-# https://hub.tekton.dev/tekton/task/git-clone
+#ref: https://hub.tekton.dev/tekton/task/git-clone
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -1019,7 +1064,7 @@ spec:
     securityContext:
       runAsUser: 0
 ---
-# Source: pipeline/templates/kubectl-restart-deployment/task.yaml
+# Source: pipeline/templates/rolling-update/task.yaml
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -1059,7 +1104,7 @@ spec:
       type: string
       default: "arm64"
   steps:
-    - name: get-kubectl-and-run-command
+    - name: rolling-update
       image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
       script: |
         set -xe
@@ -1184,12 +1229,22 @@ spec:
 
 
 
+    value: $(body.pull_request.head.sha)
+
+
+
+
+
+
+
   - name: namespace
     value: default
   - name: git_source
     value: $(body.repository.html_url)
   - name: git_repository_name
     value: $(body.repository.name)
+  - name: git_branch_name
+    value: $(body.ref)
   - name: git_revision_owner
 ---
 # Source: pipeline/templates/triggers/triggerTemplate.yaml
@@ -1219,12 +1274,8 @@ spec:
       
       pipelineRef:
         name: prod
-      # podTemplate:
-      #   securityContext:
-      #     runAsNonRoot: true
-      #     runAsUser: 1000920000
-      #     fsGroup: 1000920000
       serviceAccountNames:
+        
         
       params:
       - name: git_revision
