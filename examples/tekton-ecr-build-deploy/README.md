@@ -24,9 +24,11 @@ Description:
 
 ## Install the pipeline
 
+Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+
 ```bash
 cd examples/tekton-ecr-build-deploy
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
 ```
 
 ## Run a pipeline manually

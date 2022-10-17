@@ -31,6 +31,25 @@ taskdefinitions:
 
 pipelines:
   - name: prod 
+    params:
+    - name: git_revision
+      description: The git revision
+      default: "master"
+    - name: git_revision_owner
+      description: The owner of the git revision
+      default: "git_owner_default_value"
+    - name: git_branch_name
+      description: The name of branch for the git revision
+      default: "git_branch_name_default_value"
+    - name: git_repository_name
+      description: The name of the git repository
+      default: "git_repository_name_default_value"
+    workspaces:
+      - name: git-pvc
+      - name: image-cache
+      - name: ssh-creds
+      - name: docker-creds-cm
+      - name: kubeconfig
     trigger:
       eventTypes: [ "pull_request" ]
       eventActions: "['opened','synchronize','reopened']"
@@ -40,7 +59,7 @@ pipelines:
         name: "git-clone"
       params:
       - name: url
-        value: git@github.com:dockerised/docker-anyconnect-vpn.git
+        value: git@github.com:dockerised/docker-nginx-hello-world
       - name: revision #revision/commit
         value: $(params.git_revision)
       workspaces:
@@ -55,7 +74,7 @@ pipelines:
       - name: DOCKER_REGISTRY
         value: george7522
       - name: DOCKER_REPOSITORY
-        value: docker-anyconnect-vpn
+        value: docker-nginx-hello-world
       - name: DOCKER_IMAGE_TAG
         value: $(params.git_revision)
       runAfter:
@@ -80,11 +99,9 @@ pipelines:
       - name: docker_registry
         value: george7522
       - name: docker_repository
-        value: docker-anyconnect-vpn
+        value: docker-nginx-hello-world
       runAfter:
       - kaniko-build
       workspaces:
       - name: kubeconfig-dir
         workspace: kubeconfig
-    custom:
-      enabled: false
