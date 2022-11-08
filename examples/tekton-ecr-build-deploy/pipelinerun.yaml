@@ -1,14 +1,14 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: dummy-
+  generateName: example-ecr-
   namespace: tekton-pipelines
 spec:
   pipelineRef:
     name: prod
   params:
   - name: git_revision
-    value: master
+    value: latest
   taskRunSpecs:
     - pipelineTaskName: ecr-build-push
       taskServiceAccountName: ecr-build-push

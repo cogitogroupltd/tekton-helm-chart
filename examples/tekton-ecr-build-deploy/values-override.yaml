@@ -7,26 +7,12 @@ secret_slack_webhook_uri:
 github_token:
 
 # Define variables used for both ecr-build-push and imagePullSecret in helm-deploy
+# AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "00__EXAMPLE__091"
+# AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEEX__EXAMPLE__RNSP5K"
+# AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIuTS1H__EXAMPLE__+2bgoWP+K"
 AWS_ECR_ACCOUNT_ID: &AWS_ECR_ACCOUNT_ID "009453609091"
-AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEM32UCBS2RNSP5K"
-AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIuTS1HDcqfNT9v/TOEb2cWjE2+2bgoWP+K"
-
-# Uncomment this to expose your EventListener to your GitHub 
-# services:
-# - name: webhook
-#   type: LoadBalancer
-#   port: 443
-#   nodePort: 30171
-#   targetPort: 8080
-#   annotations:
-#     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-#     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:683746102303:certificate/f2a2f311-568b-4b57-8acf-3cbb509aad6f 
-#     service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS-1-2-2017-01
-#     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '*'
-#     service.beta.kubernetes.io/aws-load-balancer-type: elb
-#   selector:
-#     app.kubernetes.io/managed-by: EventListener
-#     app.kubernetes.io/part-of: Triggers
+AWS_ACCESS_KEY_ID: &AWS_ACCESS_KEY_ID "AKIAQEEX__EXAMPLE__RNSP5K"
+AWS_SECRET_ACCESS_KEY: &AWS_SECRET_ACCESS_KEY "E+fkkgIuTS1H__EXAMPLE__+2bgoWP+K"
 
 taskdefinitions:
   enabled: true

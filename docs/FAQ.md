@@ -248,3 +248,97 @@ Type mismatch in `taskdefinition[].params`, the only accepted values are below:
 - default
 - description
 - type
+
+Solution:
+
+Ensure any fields under `taskdefinitions.tasks[].params` have the correct types for example only `name` and `type`:
+
+```yaml
+taskdefinitions:
+  tasks:
+  - name: ecr-build-push
+    params:
+    - name: app_short_name
+      type: string
+```
+
+Problem:
+
+
+```
+tekton-helm-chart$ cd examples/tekton-buildah-build-deploy
+source ../../.auth/dockerhub.env
+export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
+export SSH_KEY_LOCATION=../../.auth/id_rsa
+docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
+tee "config.json" > /dev/null <<EOF
+{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
+EOF
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /Users/george/.kube/config_kind
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /Users/george/.kube/config_kind
+Release "pipelines" does not exist. Installing it now.
+Error: admission webhook "validation.webhook.pipeline.tekton.dev" denied the request: validation failed: invalid value: couldn't add link between rolling-update and buildah-build: task rolling-update depends on buildah-build but buildah-build wasn't present in Pipeline: spec.tasks
+```
+
+
+Solution: 
+
+A `runAfter` statement is referencing a task name that does not exist in the pipeline.
+
+For example this input file may have caused the error
+
+`values-override.yaml`
+```yaml
+    taskcall:
+    - name: git-clone
+      taskRef:
+        name: "git-clone"
+      params:
+      - name: url
+        value: git@github.com:cogitogroupltd/docker-nginx-hello-world
+      - name: revision #revision/commit
+        value: $(params.git_revision)
+      workspaces:
+      - name: ssh-directory
+        workspace: ssh-creds
+      - name: output
+        workspace: git-pvc
+    - name: buildah-build-push
+      taskRef:
+        name: buildah-build
+      params:
+      - name: IMAGE
+        value: cogitoexample/docker-nginx-hello-world
+      runAfter:
+      - git-clone
+      workspaces:
+      - name: source
+        workspace: git-pvc
+      - name: dockerconfig
+        workspace: docker-creds-cm
+    - name: rolling-update
+      taskRef:
+        name: rolling-update
+      params:
+      - name: deployment
+        value: nginx-app
+      - name: namespace
+        value: default
+      - name: tag
+        value: $(params.git_revision)
+      - name: git_repository_name
+        value: $(params.git_repository_name)
+      - name: docker_registry
+        value: cogitoexample
+      - name: docker_repository
+        value: docker-nginx-hello-world
+      runAfter:
+      - buildah-build
+```
+
+This is because the `runAfter` should reference the name `buildah-build-push`
+```yaml
+      runAfter:
+      - buildah-build
+```
