@@ -49,6 +49,30 @@ cd examples/tekton-kaniko-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
 
+## View the Tekton dashboard
+
+For more information on how to install and view the dashboard see the main [README.md](../../README.md)
+
+- Install Dashboard
+
+```bash
+# See here for version list  https://github.com/tektoncd/dashboard/tags
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/v0.29.2/tekton-dashboard-release.yaml
+```
+- Wait for the pods to come up
+
+```bash
+kubectl get pod -n tekton-pipelines --watch
+```
+
+- Port-forward to the dashboard
+
+```bash
+kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
+```
+
+- Open your browser and navigate to http://localhost:8887 -> PipelineRuns and select your running pipeline
+
 ## Run a pipeline via Trigger (requires additional configuration)
 
 NOTE: If you are running locally you will need to configure inbound firewall rules on your router!

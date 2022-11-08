@@ -414,7 +414,7 @@ spec:
 
       params:
       - name: DOCKER_REGISTRY
-        value: "george7522"
+        value: "cogitoexample"
       - name: DOCKER_REPOSITORY
         value: "docker-nginx-hello-world"
       - name: DOCKER_IMAGE_TAG
@@ -438,7 +438,7 @@ spec:
       - name: git_repository_name
         value: "$(params.git_repository_name)"
       - name: docker_registry
-        value: "george7522"
+        value: "cogitoexample"
       - name: docker_repository
         value: "docker-nginx-hello-world"
 # / Global Task calling
@@ -1102,9 +1102,6 @@ spec:
     - name: tag
       type: string
       default: "master"
-    - name: arch
-      type: string
-      default: "arm64"
   steps:
     - name: rolling-update
       image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
