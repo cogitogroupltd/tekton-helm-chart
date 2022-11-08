@@ -4,6 +4,7 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 PreReqs:
 - See [README.md](../../charts/tekton/README.md)
+- DockerHub credentials 
 
 Description:
 
@@ -18,7 +19,7 @@ Description:
 ## Install pipelines
 
 
-- Deploy Tekton pipeline helm chart (NOTE: replace credentials)
+- Deploy Tekton pipeline helm chart
 
 NOTE:
 
@@ -26,14 +27,17 @@ NOTE:
 
 - Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
 
-```bash
+- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $DOCKERHUB_PASSWORD
 
+```bash
+source ./.auth/dockerhub.env
+cd examples/tekton-kaniko-build-deploy
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-docker_auth=$(echo -n george7522:somepass! | base64)
+docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD! | base64)
 tee "config.json" > /dev/null <<EOF
-{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
+{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
 
 

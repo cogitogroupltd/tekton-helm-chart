@@ -87,7 +87,7 @@ pipelines:
         name: rolling-update
       params:
       - name: deployment
-        value: nginx-app
+        value: nginx-app 
       - name: namespace
         value: default
       - name: tag

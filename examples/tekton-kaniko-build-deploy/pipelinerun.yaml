@@ -10,8 +10,6 @@ spec:
   - name: git_revision
     value: master
   taskRunSpecs:
-    # - pipelineTaskName: kaniko-build
-    #   taskServiceAccountName: kaniko-build
     - pipelineTaskName: rolling-update
       taskServiceAccountName: rolling-update
   workspaces:

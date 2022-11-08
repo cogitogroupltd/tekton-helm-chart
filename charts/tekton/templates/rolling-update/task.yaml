@@ -48,6 +48,7 @@ spec:
         mv ./kubectl /usr/local/bin/kubectl
         chown root: /usr/local/bin/kubectl
         kubectl version
-        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        kubectl get deployment --namespace $(params.namespace) || kubectl create deployment $(params.deployment) --namespace $(params.namespace) --image="$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        kubectl set image deploy/$(params.deployment) "$(params.docker_repository)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)

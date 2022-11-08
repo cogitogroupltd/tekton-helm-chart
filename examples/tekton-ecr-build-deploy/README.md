@@ -33,9 +33,13 @@ NOTE:
 
 ```bash
 cd examples/tekton-ecr-build-deploy
-docker_auth=$(echo -n george7522:somepass! | base64)
+export DOCKERHUB_USERNAME=
+export DOCKERHUB_PASSWORD=
+export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
+# export SSH_KEY_LOCATION=~/.ssh/id_rsa #uncomment this if you are using SSH credentials for cloning
+docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
-{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
+{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
 helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
 ```

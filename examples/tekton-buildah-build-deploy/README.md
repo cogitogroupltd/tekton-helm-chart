@@ -20,11 +20,27 @@ Description:
 
 ## Install the pipeline
 
+
+- Deploy Tekton pipeline helm chart
+
+NOTE:
+
+- Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+
+- Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
+
+- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $DOCKERHUB_PASSWORD
+
+
 ```bash
+cd examples/tekton-buildah-build-deploy
+export DOCKERHUB_USERNAME=
+export DOCKERHUB_PASSWORD=
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-docker_auth=$(echo -n george7522:pass! | base64)
+# export SSH_KEY_LOCATION=~/.ssh/id_rsa #uncomment this if you are using SSH credentials for cloning
+docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
-{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
+{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
