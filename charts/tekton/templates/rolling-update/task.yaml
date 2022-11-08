@@ -33,22 +33,13 @@ spec:
     - name: tag
       type: string
       default: "master"
-    - name: arch
-      type: string
-      default: "arm64"
   steps:
     - name: rolling-update
-      image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+      image: george7522/cicd-agent:0.02
       script: |
         set -xe
-        cd /tmp
-        rm -f /usr/local/bin/kubectl
-        curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
-        chmod +x ./kubectl
-        mv ./kubectl /usr/local/bin/kubectl
-        chown root: /usr/local/bin/kubectl
-        kubectl version
-        kubectl get deployment --namespace $(params.namespace) || kubectl create deployment $(params.deployment) --namespace $(params.namespace) --image="$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
-        kubectl set image deploy/$(params.deployment) "$(params.docker_repository)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        kubectl get deployment $(params.deployment) --namespace $(params.namespace) | grep -iq "$(params.deployment)" || kubectl create deployment $(params.deployment) --namespace $(params.namespace) --image="$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        # The set image command has this syntax `kubectl set image deploy/$DEPLOYMENT_NAME $CONTAINER_NAME=cogitoexample/docker-nginx-hello-world --namespace default`
+        kubectl set image deploy/$(params.deployment) "$(params.docker_repository)=$(params.docker_registry)/$(params.docker_repository):$(params.tag)" --namespace $(params.namespace)
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)
