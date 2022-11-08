@@ -17,7 +17,7 @@ Description:
   - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. The default will push to an ECR repository called "test"
   - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
   - `helm-deploy` - Deploy the docker image artifact from ECR using Helm to the cluster where Tekton is installed
-- Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
+- Uses local RSA private key located in `.auth/id_rsa` for `git-clone` and `git-clone-infra`
 
 ![](2022-10-17-23-18-35.png)
 
@@ -29,19 +29,19 @@ NOTE:
 
 - Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
 
-- Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
+- Beware this will create a secret in the cluster with the private SSH key located at `.auth/id_rsa`
 
 ```bash
 cd examples/tekton-ecr-build-deploy
 export DOCKERHUB_USERNAME=
 export DOCKERHUB_PASSWORD=
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-# export SSH_KEY_LOCATION=~/.ssh/id_rsa #uncomment this if you are using SSH credentials for cloning
+export SSH_KEY_LOCATION=.auth/id_rsa
 docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ~/.ssh/id_rsa)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --values ./values-override.yaml
 ```
 
 ## Run a pipeline manually

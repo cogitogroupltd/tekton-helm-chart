@@ -13,7 +13,7 @@ Description:
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
   - `build-push` - Build the Dockerfile using Kaniko and push it to Dockerhub using Kaniko using credentials specified in `config.json`
   - `rolling-update` - Deploy the docker image artifact to your existing Kubernetes deployment
-- Uses local RSA private key located in `~/.ssh/id_rsa` for `git-clone` and `git-clone-infra`
+- Uses local RSA private key located in `.auth/id_rsa` for `git-clone` and `git-clone-infra`
 
 ![](2022-10-17-23-36-33.png)
 ## Install pipelines
@@ -25,19 +25,19 @@ NOTE:
 
 - Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
 
-- Beware this will create a secret in the cluster with the private SSH key located at `~/.ssh/id_rsa`
+- Beware this will create a secret in the cluster with the private SSH key located at `.auth/id_rsa`
 
 - Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $DOCKERHUB_PASSWORD
 
 ```bash
-source ./.auth/dockerhub.env
 cd examples/tekton-kaniko-build-deploy
+source ../../.auth/dockerhub.env
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD! | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
 
 
@@ -50,6 +50,8 @@ kubectl create -f pipelinerun.yaml
 ```
 
 ## Run a pipeline via Trigger (requires additional configuration)
+
+NOTE: If you are running locally you will need to configure inbound firewall rules on your router!
 
 - Open inbound firewall rules to allow traffic from GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
 - Open outbound firewall rules to allow traffic to GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
