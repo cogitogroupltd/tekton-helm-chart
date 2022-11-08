@@ -55,15 +55,16 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 In order to install the Tekton Helm chart you will need a Kubernetes cluster > v1.22 and the below tools
 
 - Kubernetes cluster (optional, see [kind.md](./docs/kind.md) for deploying a local Kind cluster)
-- Kubectl > v1.22
-- Helm > v3.0
-- AWS (optional, required for some examples)
+- Kubectl > v1.22 [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/)
+- Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/)
+- AWS (optional, required for some examples) [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - Docker (optional, required for running local Kubernetes Kind cluster and building/pushing images)
 - SSH RSA Keypair with no passphrase placed at `.auth/id_rsa` (optional: only if git clone uses git@ or the repository is private)
-		```bash
-		cd tekton-helm-chart
-		ssh-keygen -t rsa -f .auth/id_rsa -b 4096 -m PEM -q -N ""
-		```
+
+```bash
+cd tekton-helm-chart
+ssh-keygen -t rsa -f .auth/id_rsa -b 4096 -m PEM -q -N ""
+```
 
 See [prereqs.md](./docs/prereqs.md)
 
@@ -117,7 +118,6 @@ NOTE: The Tekton dashboard has a tendency to drop whilst using port-forwarding, 
 See `raw-output.yaml` files for example outputted Kubernetes YAML and example command used to generate.
 
 
-
 ###  2.1. <a name='Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-docker'></a>Example 1 - Clone, build and push docker image to ECR using Docker-in-docker
 
 See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
@@ -137,9 +137,7 @@ See example [README.md](./examples/tekton-buildah-build-deploy/README.md)
 ![](./examples/tekton-buildah-build-deploy/2022-10-18-00-06-27.png)
 
 
-
 ##  3. <a name='Todo'></a>Todo
-- Create Incubator project https://github.com/helm/community/blob/main/incubator.md
 - Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
 - Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
 - Examples - Incorpoate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege 
@@ -147,11 +145,11 @@ See example [README.md](./examples/tekton-buildah-build-deploy/README.md)
 - Move resource defs from eventListener
 - Remove dependency on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole 
 - Documentation for Windows
-- Test Documentation on WSL
-- Create output-raw.yaml for each pipeline run
-- Auto generate _taskRun.yaml for custom-task in helm output via Notes.txt
-- Auto generate a _pipelineRun.yaml for each pipeline in helm output via Notes.txt
+- Auto generate dynamic _taskRun.yaml for custom-task in helm output via Notes.txt
+- Auto generate a dynamic _pipelineRun.yaml for each pipeline in helm output via Notes.txt
 - Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
+
+More feature requests? Send them to `contact@cogitogroup.co.uk`
 ##  4. <a name='Troubleshooting'></a>Troubleshooting
 
 See [FAQ.md](./docs/FAQ.md) or our [blog](https://cogitogroup.co.uk/blog)
