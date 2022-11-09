@@ -1,6 +1,6 @@
 # Helm chart for installing Tekton pipelines
 
-[Cogito Group's](https://cogitogroup.co.uk) cloud agnostic and generic Tekton Helm chart to install DevOps pipelines ontop of Kubernetes with **one** command. 
+[Cogito Group's](https://cogitogroup.co.uk) cloud agnostic and generic Tekton Helm chart to install CI/CD pipelines ontop of Kubernetes with **one** command. 
 
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
