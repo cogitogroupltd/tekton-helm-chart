@@ -1,2 +1,2 @@
-docker build -t george7522/cicd-agent:0.01 .
-docker push george7522/cicd-agent:0.01
+docker build -t cogitoexample/cicd-agent:0.02 .
+docker push cogitoexample/cicd-agent:0.02

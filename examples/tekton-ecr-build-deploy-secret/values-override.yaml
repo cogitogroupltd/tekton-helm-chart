@@ -113,7 +113,7 @@ taskdefinitions:
       default: "arm64"
     steps:
     - name: ecr-build-push
-      image: george7522/jenkins-agent:0.04
+      image: cogitoexample/cicd-agent:0.02
       workingDir: $(workspaces.git-pvc.path)
       volumeMounts:
       - name: aws
@@ -166,7 +166,7 @@ taskdefinitions:
       default: "defaultstage"
     steps:
     - name: helm-deploy
-      image: george7522/jenkins-agent:0.04
+      image: cogitoexample/cicd-agent:0.02
       workingDir: $(workspaces.git-pvc.path)
       volumeMounts:
       - name: aws

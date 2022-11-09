@@ -109,7 +109,7 @@ taskdefinitions:
       default: "arm64"
     steps:
     - name: ecr-build-push
-      image: george7522/cicd-agent:0.01
+      image: cogitoexample/cicd-agent:0.02
       workingDir: $(workspaces.git-pvc.path)
       volumeMounts:
       - name: docker
@@ -160,7 +160,7 @@ taskdefinitions:
       default: "defaultstage"
     steps:
     - name: helm-deploy
-      image: george7522/cicd-agent:0.01
+      image: cogitoexample/cicd-agent:0.02
       env:
       - name: AWS_ACCESS_KEY_ID
         value: $(params.AWS_ACCESS_KEY_ID)

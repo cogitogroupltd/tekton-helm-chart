@@ -1321,7 +1321,7 @@ spec:
       value: $(params.AWS_ACCESS_KEY_ID)
     - name: AWS_SECRET_ACCESS_KEY
       value: $(params.AWS_SECRET_ACCESS_KEY)
-    image: george7522/cicd-agent:0.01
+    image: cogitoexample/cicd-agent:0.02
     name: ecr-build-push
     script: "set -x \nset -e\n# Build image\naws ecr get-login-password --region $(params.AWS_REGION)
       | docker login --username AWS --password-stdin \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com\"\ndocker
@@ -1390,7 +1390,7 @@ spec:
       value: $(params.AWS_REGION)
     - name: AWS_ECR_ACCOUNT_ID
       value: $(params.AWS_ECR_ACCOUNT_ID)
-    image: george7522/cicd-agent:0.01
+    image: cogitoexample/cicd-agent:0.02
     name: helm-deploy
     script: |
       set -e

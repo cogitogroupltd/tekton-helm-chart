@@ -7,7 +7,7 @@ spec:
     name: kaniko
   params:
   - name: IMAGE
-    value: "george7522/docker-anyconnect-vpn"
+    value: "cogitogroupltd/docker-nginx-hello-world"
   workspaces:
   - name: source
     persistentVolumeClaim:

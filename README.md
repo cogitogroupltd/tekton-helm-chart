@@ -4,6 +4,7 @@
 
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
+Copyright [2022] [Cogito Group Ltd]
 
 <!-- vscode-markdown-toc -->
 1. [Summary](#Summary)

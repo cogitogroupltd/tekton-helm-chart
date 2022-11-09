@@ -35,7 +35,7 @@ spec:
       default: "master"
   steps:
     - name: rolling-update
-      image: george7522/cicd-agent:0.02
+      image: cogitoexample/cicd-agent:0.02
       script: |
         set -xe
         kubectl get deployment $(params.deployment) --namespace $(params.namespace) | grep -iq "$(params.deployment)" || kubectl create deployment $(params.deployment) --namespace $(params.namespace) --image="$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
