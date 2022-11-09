@@ -32,7 +32,6 @@ NOTE:
 ```bash
 cd examples/tekton-kaniko-build-deploy
 source ../../.auth/dockerhub.env
-export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}

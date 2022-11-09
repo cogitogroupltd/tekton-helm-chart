@@ -33,7 +33,6 @@ Description:
 ```bash
 cd examples/tekton-buildah-build-deploy
 source ../../.auth/dockerhub.env
-export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 export SSH_KEY_LOCATION=../../.auth/id_rsa
 docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
