@@ -151,6 +151,6 @@ See example [README.md](./examples/tekton-buildah-build-deploy/README.md)
 - Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background.
 
 More feature requests? Send them to `contact@cogitogroup.co.uk`
-##  4. <a name='Troubleshooting'></a>Troubleshooting
+## 4. <a name='Troubleshooting'></a>Troubleshooting
 
 See [FAQ.md](./docs/FAQ.md) or our [blog](https://cogitogroup.co.uk/blog)
