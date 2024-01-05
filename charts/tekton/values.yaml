@@ -2,6 +2,25 @@
 cleanup_cronjob: 
   enabled: true
 
+# Enable a nightly 10pm build and push
+cronjob:
+  enabled: false
+  # schedule: "0 22 * * *"
+
+# Execute pipelinerun's stored in a github repo using a cronJob 
+cronjob_pipelineRun:
+  enabled: false
+  list: 
+  # Enable a nightly 11.15pm
+  # - schedule: "15 23 * * *"
+  #   secret_ssh_cred: pipelines-ssh-key
+  #   secret_ssh_cred_key: id_rsa
+  #   github_pipelines_repo: "git@github.com:ExampleOrg/Kubernetes.git" # this is where your Tekton PipelineRuns live
+  #   pipeline_run_dir: "tekton/pipelinerun" # directory where pipelineruns 
+  #   pipeline_run_name: "helm-package-pusher"
+
+
+
 secret_ssh_cred: ssh-key
 secret_ssh_key:
 
