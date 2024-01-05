@@ -41,7 +41,7 @@ spec:
     description: The image on which builds will run (default is v1.5.1)
     default: gcr.io/kaniko-project/executor:v1.7.0@sha256:8504bde9a9a8c9c4e9a4fe659703d265697a36ff13607b7669a4caa4407baa52
   workspaces:
-  - name: source
+  - name: git-pvc
     description: Holds the context and docker file
   - name: dockerconfig
     description: Includes a docker `config.json`
@@ -54,27 +54,14 @@ spec:
   results:
   - name: IMAGE-DIGEST
     description: Digest of the image just built.
-
   steps:
-  - name: warm-cache
-    image: gcr.io/kaniko-project/warmer
-    args:
-    - --cache-dir=/cache
-    - --image=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY)
-    resources:
-      limits:
-        cpu: 2
-        memory: 4096Mi
-      requests:
-        cpu: 1
-        memory: 1048Mi
   - name: build-and-push
-    workingDir: $(workspaces.source.path)
+    workingDir: $(workspaces.git-pvc.path)
     image: $(params.BUILDER_IMAGE)
     args:
     - $(params.EXTRA_ARGS[*])
     - --dockerfile=$(params.DOCKERFILE)
-    - --context=$(workspaces.source.path)/$(params.CONTEXT)  # The user does not need to care the workspace and the source.
+    - --context=$(params.CONTEXT)  # The user does not need to care the workspace and the source.
     - --destination=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY):$(params.DOCKER_IMAGE_TAG)
     - --cache=true
     - --digest-file=/tekton/results/IMAGE-DIGEST

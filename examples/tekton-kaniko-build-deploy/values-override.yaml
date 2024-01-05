@@ -78,7 +78,7 @@ pipelines:
       runAfter:
       - git-clone
       workspaces:
-      - name: source
+      - name: git-pvc
         workspace: git-pvc
       - name: dockerconfig
         workspace: docker-creds-cm

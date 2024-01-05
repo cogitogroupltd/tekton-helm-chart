@@ -3,8 +3,8 @@
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 PreReqs:
-- See [README.md](../../charts/tekton/README.md)
-- DockerHub credentials 
+- See [README.md](../../charts/tekton/README.md#InstallTekton)
+- DockerHub credentials (working example credentials are provided)
 
 Description:
 

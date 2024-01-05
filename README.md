@@ -42,11 +42,11 @@ Copyright [2022] [Cogito Group Ltd]
 
 ###  1.2. <a name='Successfullytestedon'></a>Successfully tested on
 
- - AWS EKS > v1.22
+ - AWS EKS version == 1.22
  - OpenShift ROSA (OKD4)
  - Openshift OKD3
- - Kind [download](https://kind.sigs.k8s.io/) > v1.22
- - Microk8s
+ - Kind [download](https://kind.sigs.k8s.io/) version == 1.22
+ - Microk8s version == 1.22
  - Rancher K3s 
  - Google Kubernetes Engine (GKE)
 
