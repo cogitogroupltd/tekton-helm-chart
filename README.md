@@ -60,7 +60,7 @@ In order to install the Tekton Helm chart you will need a Kubernetes cluster > v
 - Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/)
 - AWS (optional, required for some examples) [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - Docker (optional, required for running local Kubernetes Kind cluster and building/pushing images)
-- SSH RSA Keypair with no passphrase placed at `.auth/id_rsa` (optional: only if git clone uses git@ or the repository is private)
+- SSH RSA Keypair with no passphrase placed inside this repository at `.auth/id_rsa`
 
 ```bash
 cd tekton-helm-chart
