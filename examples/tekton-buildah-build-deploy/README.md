@@ -3,7 +3,8 @@
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 PreReqs:
-- See [README.md](../../charts/tekton/README.md)
+- See 1.3 Pre-requisities in [README.md](../../README.md)
+
 
 Description:
 
@@ -32,7 +33,7 @@ Description:
 
 ```bash
 cd examples/tekton-buildah-build-deploy
-source ../../.auth/dockerhub.env
+source ../../.env
 export SSH_KEY_LOCATION=../../.auth/id_rsa
 docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
@@ -48,30 +49,6 @@ helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set g
 cd examples/tekton-buildah-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
-
-## View the Tekton dashboard
-
-For more information on how to install and view the dashboard see the main [README.md](../../README.md)
-
-- Install Dashboard
-
-```bash
-# See here for version list  https://github.com/tektoncd/dashboard/tags
-kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/v0.29.2/tekton-dashboard-release.yaml
-```
-- Wait for the pods to come up
-
-```bash
-kubectl get pod -n tekton-pipelines --watch
-```
-
-- Port-forward to the dashboard
-
-```bash
-kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
-```
-
-- Open your browser and navigate to http://localhost:8887 -> PipelineRuns and select your running pipeline
 
 
 ## Run a pipeline via Trigger (requires additional configuration)

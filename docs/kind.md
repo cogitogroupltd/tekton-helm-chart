@@ -13,8 +13,8 @@ For the most up-to-date instruction on how to install a local Kubernetes cluster
 
 - Download the binary for your operating system from [here](https://github.com/kubernetes-sigs/kind/releases)
 
-For example for Kind CLI v0.16.0 on MacOS M1 click to download `kind-darwin-arm64`
-https://github.com/kubernetes-sigs/kind/releases/tag/v0.16.0
+For example for Kind CLI v0.22.0 on MacOS M1 click to download `kind-darwin-arm64`
+https://github.com/kubernetes-sigs/kind/releases/tag/v0.22.0
 
 - Move to a location on your computer for easy usage
 
@@ -27,7 +27,7 @@ mv ~/Downloads/kind-darwin-arm64 /usr/local/bin/kind
 
 ```bash
 $ kind version 
-kind v0.13.0 go1.18.2 darwin/arm64
+kind v0.22.0 go1.21.7 darwin/arm64
 ```
 
 

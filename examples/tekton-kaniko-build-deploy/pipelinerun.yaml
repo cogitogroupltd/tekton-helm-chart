@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   generateName: example-kaniko-
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   pipelineRef:
     name: prod

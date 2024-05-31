@@ -31,12 +31,12 @@ NOTE:
 
 ```bash
 cd examples/tekton-kaniko-build-deploy
-source ../../.auth/dockerhub.env
+source ../../.env
 docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
 
 
@@ -48,29 +48,6 @@ cd examples/tekton-kaniko-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
 
-## View the Tekton dashboard
-
-For more information on how to install and view the dashboard see the main [README.md](../../README.md)
-
-- Install Dashboard
-
-```bash
-# See here for version list  https://github.com/tektoncd/dashboard/tags
-kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/v0.29.2/tekton-dashboard-release.yaml
-```
-- Wait for the pods to come up
-
-```bash
-kubectl get pod -n tekton-pipelines --watch
-```
-
-- Port-forward to the dashboard
-
-```bash
-kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097 &
-```
-
-- Open your browser and navigate to http://localhost:8887 -> PipelineRuns and select your running pipeline
 
 ## Run a pipeline via Trigger (requires additional configuration)
 

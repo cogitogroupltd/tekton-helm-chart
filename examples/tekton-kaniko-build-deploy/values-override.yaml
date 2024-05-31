@@ -13,7 +13,7 @@ taskdefinitions:
       kind: ServiceAccount
       metadata:
         name: rolling-update
-        namespace: tekton-pipelines
+        namespace: tekton-resources
       ---
       apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
@@ -22,7 +22,7 @@ taskdefinitions:
       subjects:
         - kind: ServiceAccount
           name: "rolling-update"
-          namespace: tekton-pipelines
+          namespace: tekton-resources
       roleRef:
         kind: ClusterRole
         name: cluster-admin

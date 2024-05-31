@@ -5,14 +5,14 @@
 #tee "config.json" > /dev/null <<EOF
 #{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"someemail@mail.com"}}}
 #EOF
-#helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml > example-raw-output.yaml       
+#helm template pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml > example-raw-output.yaml       
 ---
 # Source: pipeline/templates/cronjob.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-cleanup"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/global/serviceAccount.yaml
 apiVersion: v1
@@ -26,21 +26,21 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rolling-update
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/triggers/role.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-triggers-sa"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/create-webhook/secret-github.yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: github-secret
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   token: 
   secret: 
@@ -50,7 +50,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: "pipelines-ssh-key"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   id_rsa: 
 ---
@@ -60,7 +60,7 @@ kind: Secret
 type: generic
 metadata:
   name: "pipelines-docker-config"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   config.json: 
 ---
@@ -69,7 +69,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: github-token
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 type: Opaque
 data:
   token: 
@@ -80,17 +80,17 @@ kind: ConfigMap
 metadata:
   labels:
   name: pipelines-tekton-cleanup-cm
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   runtimeConfig.sh: |
-    kubectl get pvc -n tekton-pipelines | awk '{print $1}' | xargs kubectl delete pvc -n tekton-pipelines
+    kubectl get pvc -n tekton-resources | awk '{print $1}' | xargs kubectl delete pvc -n tekton-resources
 ---
 # Source: pipeline/templates/rolling-update/cm-kubeconfig.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "pipelines-kube-config"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   kubeconfig: |-
     apiVersion: v1
@@ -164,7 +164,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-cleanup"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -174,11 +174,11 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-tekton-pipelines-pipelines"
+  name: "cluster-administrator-tekton-resources-pipelines"
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-default-sa"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -192,7 +192,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "rolling-update"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -206,7 +206,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-triggers-sa"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: "pipelines-tekton-triggers-cr"
@@ -217,7 +217,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "pipelines-tekton-triggers-role"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 rules:
 - apiGroups:
   - tekton.dev
@@ -254,7 +254,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: "pipelines-tekton-triggers-rb"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 subjects:
 - kind: ServiceAccount
   name: "pipelines-tekton-triggers-sa"
@@ -268,7 +268,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: pipelines-tekton-cleanup
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   schedule: "30 2 * * *"
   startingDeadlineSeconds: 20
@@ -305,7 +305,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: dev-listener
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   triggers:
     - name: github-listener-prod
@@ -351,7 +351,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   params:
 
@@ -544,7 +544,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-create-webhook"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   volumes:
   - name: github-secret
@@ -619,7 +619,7 @@ spec:
       api_instance = client.CoreV1Api()
       delete=False
       try:
-          api_response = api_instance.list_namespaced_config_map(namespace="tekton-pipelines", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
           print(len(api_response.items))
           if len(api_response.items) == 1 :
             delete=True
@@ -627,18 +627,18 @@ spec:
       except Exception as e:
           print("No configMap found, creating pipelines to store Webhook ID")
       if delete:
-        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-pipelines")  
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
       api_instance.create_namespaced_config_map(
           body=client.V1ConfigMap(
               metadata=client.V1ObjectMeta(
                   name="pipelines-create-webhook",
-                  namespace="tekton-pipelines"
+                  namespace="tekton-resources"
               ),
               data={
                   "id": urlSafeEncodedStr
               }
           ),
-          namespace="tekton-pipelines"
+          namespace="tekton-resources"
       )
       print("Created configMap pipelines with Webhook id=%s" % webhook_id)
       EOF
@@ -648,7 +648,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-delete-webhook"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   description: >-
     This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
@@ -714,7 +714,7 @@ spec:
       # Retrieve webhook id from configmap
       api_instance = client.CoreV1Api()
       try: 
-        api_response = api_instance.read_namespaced_config_map(namespace="tekton-pipelines", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
+        api_response = api_instance.read_namespaced_config_map(namespace="tekton-resources", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
         webhook_id_b64=api_response.data["id"]
         webhook_id=base64.b64decode(webhook_id_b64).decode("utf-8")
         
@@ -735,12 +735,12 @@ spec:
       print("deleted webhook_id: %s" % webhook_id)
       # Delete configMap containing webhook_id
       try:
-          api_response = api_instance.list_namespaced_config_map(namespace="tekton-pipelines", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
           delete=True
       except Exception as e:
           print("No configMap found called pipelines")
       if delete:
-        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-pipelines")  
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
       EOF
 ---
 # Source: pipeline/templates/git-clone/task.yaml
@@ -749,7 +749,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "git-clone"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -983,7 +983,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "kaniko-build"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -1071,7 +1071,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: rolling-update
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.2"
   annotations:
@@ -1123,7 +1123,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: send-to-webhook-slack
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
@@ -1206,7 +1206,7 @@ apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   interceptors:
     - ref:
@@ -1221,7 +1221,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   params:
   - name: git_revision
