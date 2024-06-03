@@ -65,8 +65,8 @@ Before deploying the Helm chart the below steps are required:
 - Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/). Required to deploy the Tekton pipelines in this Helm chart.
 - Install Tekton, see [Installing Tekton](./docs/installing_tekton.md). Required dependency to deploy the Tekton pipelines in this Helm chart.
 
-- SSH RSA Keypair linked with Github with **no passphrase**, see [Generate RSA](./docs/generate_rsa.md). Required for examples using git clone.
-- AWSCli > v2.0 - Required to deploy the Tekton pipelines in this Helm chart.
+- SSH RSA Keypair linked with Github with **no passphrase**, see [Generate RSA](./docs/generate_rsa.md). Required for all examples for the git clone step.
+- AWS CLI > v2.0 - Required to deploy the Tekton pipelines in this Helm chart.
 - DockerHub username and password - required for examples using Dockerhub
 
 
@@ -80,25 +80,25 @@ Listed below are a series of examples of how to use the Helm chart to achieve co
 
 ###  2.1. <a name='Example2-ClonebuildandpushdockerimagetoDockerhubusingKaniko'></a>Example 2 - Clone, build and push docker image to Dockerhub using Kaniko
 
-See example [README.md](./examples/tekton-kaniko-build-deploy/README.md)
+See example [README.md](./examples/kaniko-build-deploy/README.md)
 
-![](./examples/tekton-kaniko-build-deploy/2022-10-17-23-36-33.png)
+![](./examples/kaniko-build-deploy/2022-10-17-23-36-33.png)
 
 ###  2.2. <a name='Example3-ClonebuildandpushdockerimagetoDockerhubusingBuildah'></a>Example 3 - Clone, build and push docker image to Dockerhub using Buildah
 
-See example [README.md](./examples/tekton-buildah-build-deploy/README.md)
+See example [README.md](./examples/buildah-build-deploy/README.md)
 
-![](./examples/tekton-buildah-build-deploy/2022-10-18-00-06-27.png)
+![](./examples/buildah-build-deploy/2022-10-18-00-06-27.png)
 
 
 ###  2.3. <a name='Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-docker'></a>Example 1 - Clone, build and push docker image to ECR using Docker-in-docker (not recommended)
 
 Running docker-in-docker is not recommended due to security vulnerabilities and is only shown for demonstrational purposes.
 
-See example [README.md](./examples/tekton-ecr-build-deploy/README.md)
+See example [README.md](./examples/dind-ecr-build-deploy/README.md)
 
 
-![](./examples/tekton-ecr-build-deploy/2022-10-17-23-18-35.png)
+![](./examples/dind-ecr-build-deploy/2022-10-17-23-18-35.png)
 
 ##  3. <a name='Todo'></a>Todo
 
