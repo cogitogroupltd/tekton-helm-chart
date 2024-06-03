@@ -32,7 +32,7 @@ Description:
 
 
 ```bash
-cd examples/tekton-buildah-build-deploy
+cd examples/buildah-build-deploy
 source ../../.env
 export SSH_KEY_LOCATION=../../.auth/id_rsa
 docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
@@ -46,7 +46,7 @@ helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set g
 ## Run a pipeline manually
 
 ```bash
-cd examples/tekton-buildah-build-deploy
+cd examples/buildah-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
 

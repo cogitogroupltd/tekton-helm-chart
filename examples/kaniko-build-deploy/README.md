@@ -1,29 +1,25 @@
-
-
-WARNING: This method of building images in Kubernetes is DEPRECIATED, Kubernetes will be dropping support for Docker in future versions. Please see Kaniko build [example](../tekton-kaniko-build-deploy/README.md) or Buildah build [example](../tekton-buildah-build-deploy/README.md)
-
-# Tekton pipeline to build and push docker image to ECR and use Helm to deploy
+# Tekton pipeline to build and push docker image to Dockerhub using Kaniko and deploy with Helm
 
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 PreReqs:
 - See 1.3 Pre-requisities in [README.md](../../README.md)
+- DockerHub credentials
 
 Description:
 
 - Deploys a single Tekton pipeline called `prod` using `./values-override.yaml`
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
-  - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. The default will push to an ECR repository called "test"
-  - `git-clone-infra` - Clone down the Helm chart `common` for use with the `helm-deploy` stage
-  - `helm-deploy` - Deploy the docker image artifact from ECR using Helm to the cluster where Tekton is installed
-- Uses local RSA private key located in root of this repository `.auth/id_rsa` for `git-clone` and `git-clone-infra`
+  - `build-push` - Build the Dockerfile using Kaniko and push it to Dockerhub using Kaniko using credentials specified in `config.json`
+  - `rolling-update` - Deploy the docker image artifact to your existing Kubernetes deployment
+- Uses local RSA private key located in `.auth/id_rsa` for `git-clone` and `git-clone-infra`
 
-![](2022-10-17-23-18-35.png)
+![](2022-10-17-23-36-33.png)
+## Install pipelines
 
-## Install the pipeline
 
-Ignore `github_token` if you are planning to manually trigger builds, see below for setting up Triggers `Run a pipeline via Trigger (requires additional configuration)`
+- Deploy Tekton pipeline helm chart
 
 NOTE:
 
@@ -31,24 +27,27 @@ NOTE:
 
 - Beware this will create a secret in the cluster with the private SSH key located at `.auth/id_rsa`
 
+- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $DOCKERHUB_PASSWORD
+
 ```bash
-cd examples/tekton-ecr-build-deploy
+cd examples/kaniko-build-deploy
 source ../../.env
-export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-export SSH_KEY_LOCATION=../../.auth/id_rsa
-docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
+docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
+
+
 
 ## Run a pipeline manually
 
 ```bash
-cd examples/tekton-ecr-build-deploy
+cd examples/kaniko-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
+
 
 ## Run a pipeline via Trigger (requires additional configuration)
 
@@ -66,7 +65,7 @@ NOTE: If you are running locally you will need to configure inbound firewall rul
 ```bash
 kubectl create -f ../../charts/tekton/templates/create-webhook/_taskrun.yaml
 ```
-- Trigger push event using `git push` to repository defined in git-clone `./values-override.yaml` 
+- Trigger push event using `git push` to repository defined in git-clone `./values-override.yaml` and 
 
 or 
 

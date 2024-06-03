@@ -6,13 +6,13 @@ To troubleshoot errors make sure you run `helm template` with the `--debug` flag
 
 For example:
 ```bash
-helm template pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
+helm template pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
 ```
 
 
 ## Solutions to common problems
 
-Command run: `helm upgrade --install pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/tekton-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}`
+Command run: `helm upgrade --install pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}`
 
 Error:
 ```
@@ -266,7 +266,7 @@ Problem:
 
 
 ```
-tekton-helm-chart$ cd examples/tekton-buildah-build-deploy
+tekton-helm-chart$ cd examples/buildah-build-deploy
 source ../../.env
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 export SSH_KEY_LOCATION=../../.auth/id_rsa
