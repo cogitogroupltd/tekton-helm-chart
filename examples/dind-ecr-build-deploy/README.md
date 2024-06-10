@@ -36,11 +36,11 @@ cd examples/dind-ecr-build-deploy
 source ../../.env
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 export SSH_KEY_LOCATION=../../.auth/id_rsa
-docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${CONTAINER_REGISTRY_PASSWORD}" | base64)"
+docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources --create-namespace ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml
 ```
 
 ## Run a pipeline manually

@@ -6,7 +6,7 @@ To troubleshoot errors make sure you run `helm template` with the `--debug` flag
 
 For example:
 ```bash
-helm template pipelines -n tekton-resources ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
+helm template pipelines -n tekton-resources tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
 ```
 
 
@@ -274,7 +274,7 @@ docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${CONTAINER_REGISTRY_PA
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /Users/george/.kube/config_kind
 WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /Users/george/.kube/config_kind
 Release "pipelines" does not exist. Installing it now.
