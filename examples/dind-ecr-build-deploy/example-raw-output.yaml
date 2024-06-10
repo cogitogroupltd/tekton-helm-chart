@@ -1,17 +1,17 @@
 # Base64 secrets have been redacted from this file
 #source ../../.env
-#docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD! | base64)
+#docker_auth=$(echo -n $CONTAINER_REGISTRY_USERNAME:$CONTAINER_REGISTRY_PASSWORD! | base64)
 #tee "config.json" > /dev/null <<EOF
 #{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"george@gcrosby.co.uk"}}}
 #EOF
-#helm template pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml > example-raw-output.yaml       
+#helm template pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml > example-raw-output.yaml       
 ---
 # Source: pipeline/templates/cronjob.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-cleanup"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/global/serviceAccount.yaml
 apiVersion: v1
@@ -25,28 +25,28 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ecr-build-push
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/task-definition/serviceAccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: helm-deploy
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/triggers/role.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-triggers-sa"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 ---
 # Source: pipeline/templates/create-webhook/secret-github.yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: github-secret
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   token: 
   secret:
@@ -56,7 +56,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: "pipelines-ssh-key"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   id_rsa: 
 ---
@@ -66,7 +66,7 @@ kind: Secret
 type: generic
 metadata:
   name: "pipelines-docker-config"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   config.json: 
 ---
@@ -75,7 +75,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: github-token
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 type: Opaque
 data:
   token: 
@@ -86,17 +86,17 @@ kind: ConfigMap
 metadata:
   labels:
   name: pipelines-tekton-cleanup-cm
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   runtimeConfig.sh: |
-    kubectl get pvc -n tekton-pipelines | awk '{print $1}' | xargs kubectl delete pvc -n tekton-pipelines
+    kubectl get pvc -n tekton-resources | awk '{print $1}' | xargs kubectl delete pvc -n tekton-resources
 ---
 # Source: pipeline/templates/rolling-update/cm-kubeconfig.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "pipelines-kube-config"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 data:
   kubeconfig: |-
     apiVersion: v1
@@ -170,7 +170,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-cleanup"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -184,7 +184,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-default-sa"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -198,7 +198,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "ecr-build-push"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -212,7 +212,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "helm-deploy"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -226,7 +226,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-triggers-sa"
-    namespace: tekton-pipelines
+    namespace: tekton-resources
 roleRef:
   kind: ClusterRole
   name: "pipelines-tekton-triggers-cr"
@@ -237,7 +237,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "pipelines-tekton-triggers-role"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 rules:
 - apiGroups:
   - tekton.dev
@@ -274,7 +274,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: "pipelines-tekton-triggers-rb"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 subjects:
 - kind: ServiceAccount
   name: "pipelines-tekton-triggers-sa"
@@ -288,7 +288,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: pipelines-tekton-cleanup
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   schedule: "30 2 * * *"
   startingDeadlineSeconds: 20
@@ -325,7 +325,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: dev-listener
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   triggers:
     - name: github-listener-prod
@@ -371,7 +371,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   params:
 
@@ -594,7 +594,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-create-webhook"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   volumes:
   - name: github-secret
@@ -698,7 +698,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-delete-webhook"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   description: >-
     This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
@@ -799,7 +799,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "git-clone"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -1033,7 +1033,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "kaniko-build"
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -1121,7 +1121,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: rolling-update
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.2"
   annotations:
@@ -1176,7 +1176,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: send-to-webhook-slack
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
@@ -1259,7 +1259,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: ecr-build-push
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.2"
   annotations:
@@ -1338,7 +1338,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: helm-deploy
-  namespace: tekton-pipelines
+  namespace: tekton-resources
   labels:
     app.kubernetes.io/version: "0.2"
   annotations:
@@ -1409,7 +1409,7 @@ apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   interceptors:
     - ref:
@@ -1424,7 +1424,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: prod
-  namespace: tekton-pipelines
+  namespace: tekton-resources
 spec:
   params:
   - name: git_revision

@@ -75,6 +75,12 @@ See [prereqs.md](./docs/prereqs.md) for more information.
 
 ##  2. <a name='Installpipelinesexamples'></a>Install pipelines examples
 
+
+```bash
+helm repo add tekton https://cogitogroupltd.github.io/tekton-helm-chart
+helm repo update tekton
+```
+
 Listed below are a series of examples of how to use the Helm chart to achieve common DevOps tasks. 
 
 

@@ -3,7 +3,7 @@
 Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 PreReqs:
-- See 1.3 Pre-requisities in [README.md](../../README.md)
+- See Section 1.3 in [README.md](../../README.md)
 - DockerHub credentials
 
 Description:
@@ -27,16 +27,17 @@ NOTE:
 
 - Beware this will create a secret in the cluster with the private SSH key located at `.auth/id_rsa`
 
-- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $DOCKERHUB_PASSWORD
+- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $CONTAINER_REGISTRY_PASSWORD
 
 ```bash
 cd examples/kaniko-build-deploy
 source ../../.env
-docker_auth=$(echo -n $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD | base64)
+export SSH_KEY_LOCATION=../../.auth/id_rsa
+docker_auth=$(echo -n $CONTAINER_REGISTRY_USERNAME:$CONTAINER_REGISTRY_PASSWORD | base64)
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat ../../.auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources --create-namespace ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ```
 
 
@@ -47,6 +48,16 @@ helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set g
 cd examples/kaniko-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
+
+## Navigate to the dashboard
+
+- Open your browser and navigate to http://localhost:30080/#/namespaces/tekton-resources/pipelineruns
+
+or using port-forward
+
+- Execute a tunnel to the dashboard `kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097`
+
+- Open your browser and navigate to http://localhost:8887/#/namespaces/tekton-resources/pipelineruns
 
 
 ## Run a pipeline via Trigger (requires additional configuration)
@@ -84,5 +95,5 @@ kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.tekton-pipelin
 To uninstall the Tekton pipeline
 
 ```bash
-helm delete pipelines -n tekton-pipelines
+helm delete pipelines -n tekton-resources
 ```

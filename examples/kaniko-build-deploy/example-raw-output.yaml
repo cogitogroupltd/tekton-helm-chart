@@ -1,7 +1,7 @@
 # Base64 secrets have been redacted from this file
-#export DOCKERHUB_PASSWORD=
-#export DOCKERHUB_USERNAME=
-#docker_auth=$(echo -n $DOCKERHUB_PASSWORD:$DOCKERHUB_USERNAME | base64)
+#export CONTAINER_REGISTRY_PASSWORD=
+#export CONTAINER_REGISTRY_USERNAME=
+#docker_auth=$(echo -n $CONTAINER_REGISTRY_PASSWORD:$CONTAINER_REGISTRY_USERNAME | base64)
 #tee "config.json" > /dev/null <<EOF
 #{"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"someemail@mail.com"}}}
 #EOF

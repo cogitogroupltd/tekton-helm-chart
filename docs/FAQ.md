@@ -6,13 +6,13 @@ To troubleshoot errors make sure you run `helm template` with the `--debug` flag
 
 For example:
 ```bash
-helm template pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
+helm template pipelines -n tekton-resources ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}
 ```
 
 
 ## Solutions to common problems
 
-Command run: `helm upgrade --install pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}`
+Command run: `helm upgrade --install pipelines -n tekton-resources ./charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./examples/dind-ecr-build-deploy/values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI}`
 
 Error:
 ```
@@ -118,7 +118,7 @@ taskdefinitions:
 
 Error:
 ```
-george tekton$ helm upgrade --install pipelines -n tekton-pipelines ./charts/tekton --set github_token="$(echo -n "$GITHUB_WEBHOOK_SECRET" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --set "pipelines[1].trigger.token=$GITHUB_WEBHOOK_SECRET" --set "pipelines[2].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug
+george tekton$ helm upgrade --install pipelines -n tekton-resources ./charts/tekton --set github_token="$(echo -n "$GITHUB_WEBHOOK_SECRET" | base64)" --set secret_ssh_key="$(cat .auth/id_rsa)" --set-file=docker_config_json=config.json --values ./values-override.yaml --set secret_slack_webhook_uri=${SLACK_WEBHOOK_URI} --set "pipelines[0].trigger.token=$GITHUB_WEBHOOK_SECRET" --set "pipelines[1].trigger.token=$GITHUB_WEBHOOK_SECRET" --set "pipelines[2].trigger.token=$GITHUB_WEBHOOK_SECRET" --debug
 WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /Users/george/.kube/config
 WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /Users/george/.kube/config
 history.go:56: [debug] getting history for release pipelines
@@ -270,11 +270,11 @@ tekton-helm-chart$ cd examples/buildah-build-deploy
 source ../../.env
 export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
 export SSH_KEY_LOCATION=../../.auth/id_rsa
-docker_auth="$(echo -n "${DOCKERHUB_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
+docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${CONTAINER_REGISTRY_PASSWORD}" | base64)"
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-pipelines ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources ../../charts/tekton --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /Users/george/.kube/config_kind
 WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /Users/george/.kube/config_kind
 Release "pipelines" does not exist. Installing it now.
