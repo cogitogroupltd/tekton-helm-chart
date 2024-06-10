@@ -1,6 +1,6 @@
 apiVersion: v2
 name: pipeline
-description: Helm chart to deploy a standard service
+description: Helm chart to deploy Tekton pipeline resources
 
 # A chart can be either an 'application' or a 'library' chart.
 #
