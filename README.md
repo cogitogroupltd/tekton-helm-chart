@@ -50,7 +50,7 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 - AWS EKS version == v1.30
 - OpenShift ROSA (OKD4) v1.28 - v1.30
 - Openshift OKD3 - v1.28 - v1.30
-- Kind [download](https://kind.sigs.k8s.io/) version == 1.30
+- Kind [download](https://kind.sigs.k8s.io/) version == v1.29, v1.30
 - Microk8s version == v1.30
 - Rancher K3s == v1.30
 - Azure AKS == 1.30
