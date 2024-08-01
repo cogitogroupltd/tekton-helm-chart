@@ -47,6 +47,7 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 ###  1.2. <a name='Successfullytestedon'></a>Successfully tested on
 
+- CPU Architectures; arm64 (MacM1, MacM2), amd64
 - AWS EKS version == v1.30
 - OpenShift ROSA (OKD4) v1.28 - v1.30
 - Openshift OKD3 - v1.28 - v1.30
@@ -61,17 +62,14 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 Before deploying the Helm chart the below steps are required:
 
 - Kubernetes cluster >= v1.28, see [kind.md](./docs/kind.md).
-- Kubectl > v1.25 [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/). Only required to execute a `pipelineRun`.
-- Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/). Required to deploy the Tekton pipelines in this Helm chart.
+- Kubectl > v1.25 [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/). Only required to execute a `pipelineRun`. See [Pre Requisities](./docs/prereqs.md) for an example install script
+- Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/). Required to deploy the Tekton pipelines in this Helm chart. See [Pre Requisities](./docs/prereqs.md) for an example install script
 - Install Tekton, see [Installing Tekton](./docs/installing_tekton.md). Required dependency to deploy the Tekton pipelines in this Helm chart.
 
 - SSH RSA Keypair linked with Github with **no passphrase**, see [Generate RSA](./docs/generate_rsa.md). Required for all examples for the git clone step.
 - AWS CLI > v2.0 - Required to deploy the Tekton pipelines in this Helm chart.
 - DockerHub username and password - required for examples using Dockerhub
 
-
-
-See [prereqs.md](./docs/prereqs.md) for more information.
 
 ##  2. <a name='Installpipelinesexamples'></a>Install pipelines examples
 
