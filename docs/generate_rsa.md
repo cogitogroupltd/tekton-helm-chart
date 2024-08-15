@@ -2,6 +2,7 @@
 
 ```bash
 cd tekton-helm-chart
+# Generate .auth/id_rsa 
 ssh-keygen -t rsa -f .auth/id_rsa -b 4096 -m PEM -q -N ""
 ```
 

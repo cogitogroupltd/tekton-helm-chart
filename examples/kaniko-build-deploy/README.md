@@ -49,6 +49,12 @@ cd examples/kaniko-build-deploy
 kubectl create -f pipelinerun.yaml
 ```
 
+- Check the deployed app
+
+```bash
+kubectl get pod --namespace default
+```
+
 ## Navigate to the dashboard
 
 - Open your browser and navigate to http://localhost:30080/#/namespaces/tekton-resources/pipelineruns

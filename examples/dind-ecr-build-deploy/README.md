@@ -11,7 +11,7 @@ PreReqs:
 
 Description:
 
-- Deploys a single Tekton pipeline called `prod` using `./values-override.yaml`
+- Deploys a single Tekton pipeline called `prod` using the Helm chart inputs defined in `./values-override.yaml`
 - Stages
   - `git-clone` - Clone down the application source code from GitHub containing a `Dockerfile`
   - `ecr-build-push` - Build the Dockerfile using Docker-in-docker and push it to ECR using the AWS credentials either in the `aws` secret or `AWS_ECR_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. The default will push to an ECR repository called "test"
@@ -40,7 +40,7 @@ docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${DOCKERHUB_PASSWORD}" 
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml
+helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml
 ```
 
 ## Run a pipeline manually
@@ -59,34 +59,6 @@ or using port-forward
 - Execute a tunnel to the dashboard `kubectl port-forward svc/tekton-dashboard -n tekton-pipelines 8887:9097`
 
 - Open your browser and navigate to http://localhost:8887/#/namespaces/tekton-resources/pipelineruns
-
-## Run a pipeline via Trigger (requires additional configuration)
-
-NOTE: If you are running locally you will need to configure inbound firewall rules on your router!
-
-- Open inbound firewall rules to allow traffic from GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
-- Open outbound firewall rules to allow traffic to GitHub, see here https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses)
-- Uncomment `.Values.services` in `values-override.yaml` and alter certificate ARN to expose your `EventListener` to GitHub on HTTPS
-- Run install step above again and specify any `github_token` by replacing "ENTERTOKEN"
-- Create public DNS entry for your new LoadBalancer resource eg. tekton.cogitogroup.co.uk
-
-- Alter values in [_taskrun.yaml](../../charts/tekton/templates/create-webhook/_taskrun.yaml) according to your DNS entry, repository name.
-- Create the webhook in Github
-
-```bash
-kubectl create -f ../../charts/tekton/templates/create-webhook/_taskrun.yaml
-```
-- Trigger push event using `git push` to repository defined in git-clone `./values-override.yaml` 
-
-or 
-
-- Use an example github payload to test triggers locally (see Github -> Settings -> Webhooks -> Recent Deliveries) to export ane example `payload.json` (NOTE: This will not work if you have a webhook token setup and specified in `.Values.pipelines[0].trigger.token` )
-
-```bash
-kubectl run debug-pod --image=nginx 
-kubectl cp payload.json debug-pod:/root/payload.json
-kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.tekton-pipelines.svc.cluster.local:8080 -H 'X-GitHub-Event: pull_request' -d @/root/payload.json
-```
 
 
 

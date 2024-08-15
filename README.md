@@ -14,13 +14,10 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 
 <!-- vscode-markdown-toc -->
 * 1. [Summary](#Summary)
-	* 1.1. [Features](#Features)
-	* 1.2. [Successfully tested on](#Successfullytestedon)
-	* 1.3. [Prerequisties](#Prerequisties)
-* 2. [Install pipelines examples](#Installpipelinesexamples)
-	* 2.1. [Example 1 - Clone, build and push docker image to ECR using Docker-in-docker (not recommended)](#Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-dockernotrecommended)
-	* 2.2. [Example 2 - Clone, build and push docker image to Dockerhub using Buildah](#Example2-ClonebuildandpushdockerimagetoDockerhubusingBuildah)
-	* 2.3. [Example 3 - Clone, build and push docker image to Dockerhub using Kaniko](#Example3-ClonebuildandpushdockerimagetoDockerhubusingKaniko)
+* 2. [Examples](#Examples)
+	* 2.1. [Simple Kaniko Pipeline Example](#SimpleKanikoPipelineExample)
+	* 2.2. [Simple Buildah Pipeline Example](#SimpleBuildahPipelineExample)
+	* 2.3. [Simple Docker-in-docker Pipeline Example (not recommended)](#SimpleDocker-in-dockerPipelineExamplenotrecommended)
 * 3. [Todo](#Todo)
 * 4. [Troubleshooting](#Troubleshooting)
 
@@ -65,13 +62,12 @@ Before deploying the Helm chart the below steps are required:
 - Kubectl > v1.25 [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/). Only required to execute a `pipelineRun`. See [Pre Requisities](./docs/prereqs.md) for an example install script
 - Helm > v3.0 [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/). Required to deploy the Tekton pipelines in this Helm chart. See [Pre Requisities](./docs/prereqs.md) for an example install script
 - Install Tekton, see [Installing Tekton](./docs/installing_tekton.md). Required dependency to deploy the Tekton pipelines in this Helm chart.
-
-- SSH RSA Keypair linked with Github with **no passphrase**, see [Generate RSA](./docs/generate_rsa.md). Required for all examples for the git clone step.
+- SSH RSA Keypair linked with Github with **no passphrase**, see [Generate RSA](./docs/generate_rsa.md) for how to generate. If you already have one then great, this will be required for all examples.
 - AWS CLI > v2.0 - Required to deploy the Tekton pipelines in this Helm chart.
 - DockerHub username and password - required for examples using Dockerhub
 
 
-##  2. <a name='Installpipelinesexamples'></a>Install pipelines examples
+##  2. <a name='Examples'></a>Examples 
 
 
 ```bash
@@ -82,28 +78,33 @@ helm repo update tekton
 Listed below are a series of examples of how to use the Helm chart to achieve common DevOps tasks. 
 
 
+###  2.1. <a name='SimpleKanikoPipelineExample'></a>Simple Kaniko Pipeline Example 
 
-###  2.1. <a name='Example1-ClonebuildandpushdockerimagetoECRusingDocker-in-dockernotrecommended'></a>Example 1 - Clone, build and push docker image to ECR using Docker-in-docker (not recommended)
+[Kaniko](https://github.com/GoogleContainerTools/kaniko)  operates without needing a Docker daemon, builds container images without requiring root privileges and more resource-efficient for building images in Kubernetes as it doesn’t require a daemon and operates as a single container process.
 
-Running docker-in-docker is not recommended due to security vulnerabilities and is only shown for demonstrational purposes.
+See example [README.md](./examples/kaniko-build-deploy/README.md)
 
-See example [README.md](./examples/dind-ecr-build-deploy/README.md)
+![](./examples/kaniko-build-deploy/2022-10-17-23-36-33.png)
 
+###  2.2. <a name='SimpleBuildahPipelineExample'></a>Simple Buildah Pipeline Example
 
-![](./examples/dind-ecr-build-deploy/2022-10-17-23-18-35.png)
+[Buildah](https://buildah.io/) is designed to be lightweight and operates without a long-running daemon, unlike Docker. This can be beneficial when running inside a container on Kubernetes, where you may want a more streamlined and efficient toolchain. Buildah allows for more granular control over the image creation process and builds images without requiring root privileges or the Docker daemon.
 
-
-###  2.2. <a name='Example2-ClonebuildandpushdockerimagetoDockerhubusingBuildah'></a>Example 2 - Clone, build and push docker image to Dockerhub using Buildah
 
 See example [README.md](./examples/buildah-build-deploy/README.md)
 
 ![](./examples/buildah-build-deploy/2022-10-18-00-06-27.png)
 
-###  2.3. <a name='Example3-ClonebuildandpushdockerimagetoDockerhubusingKaniko'></a>Example 3 - Clone, build and push docker image to Dockerhub using Kaniko
 
-See example [README.md](./examples/kaniko-build-deploy/README.md)
 
-![](./examples/kaniko-build-deploy/2022-10-17-23-36-33.png)
+###  2.3. <a name='SimpleDocker-in-dockerPipelineExamplenotrecommended'></a>Simple Docker-in-docker Pipeline Example (not recommended)
+
+This is for just for fun. Running docker-in-docker is not recommended due to security vulnerabilities and the Docker daemon is now deprecated on Kubernetes. Here we mount the docker.sock and local docker image cache into the Kubernetes hosted docker container, to build source code using native docker commands. 
+
+See example [README.md](./examples/dind-ecr-build-deploy/README.md)
+
+
+![](./examples/dind-ecr-build-deploy/2022-10-17-23-18-35.png)
 
 
 
