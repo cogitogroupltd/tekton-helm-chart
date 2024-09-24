@@ -1,12 +1,11 @@
-# cd examples/dind-ecr-build-deploy
+# cd examples/buildah-build-deploy
 # source ../../.env
-# export SLACK_WEBHOOK_URI=https://hooks.slack.com/services/TJL9A5PMJ/B03KPQ2V4JG/DUMMY
-# export SSH_KEY_LOCATION=~/.ssh/id_rsa_old
-# docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${DOCKERHUB_PASSWORD}" | base64)"
+# export SSH_KEY_LOCATION=../../.auth/id_rsa
+# docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${CONTAINER_REGISTRY_PASSWORD}" | base64)"
 # tee "config.json" > /dev/null <<EOF
-# {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
+# {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"systems@cogitogroup.co.uk"}}}
 # EOF
-# helm template pipelines -n tekton-resources --create-namespace tekton/pipeline --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml > example-raw-output.yaml
+# helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
 ---
 # Source: pipeline/templates/cronjob.yaml
 apiVersion: v1
@@ -28,6 +27,16 @@ metadata:
   name: "pipelines-tekton-triggers-sa"
   namespace: tekton-resources
 ---
+# Source: pipeline/templates/create-webhook/secret-github.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-secret
+  namespace: tekton-resources
+data:
+  token: UlU1VVJWSlVUMHRGVGc9PQ==
+  secret: UlU1VVJWSlVUMHRGVGc9PQ==
+---
 # Source: pipeline/templates/git-clone/secrets.yaml
 kind: Secret
 apiVersion: v1
@@ -36,6 +45,26 @@ metadata:
   namespace: tekton-resources
 data:
   id_rsa: 
+---
+# Source: pipeline/templates/kaniko-build/secret-docker-config.yaml
+apiVersion: v1
+kind: Secret
+type: generic
+metadata:
+  name: "pipelines-docker-config"
+  namespace: tekton-resources
+data:
+  config.json: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsiYXV0aCI6Ik9nPT0iLCJlbWFpbCI6InN5c3RlbXNAY29naXRvZ3JvdXAuY28udWsifX19Cg==
+---
+# Source: pipeline/templates/triggers/github-token.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-token
+  namespace: tekton-resources
+type: Opaque
+data:
+  token: UlU1VVJWSlVUMHRGVGc9PQ==
 ---
 # Source: pipeline/templates/cronjob.yaml
 apiVersion: v1
@@ -250,9 +279,6 @@ spec:
 # Source: pipeline/templates/custom-task/serviceAccount.yaml
 ---
 ---
-# Source: pipeline/templates/task-definition/serviceAccount.yaml
----
----
 # Source: pipeline/templates/triggers/eventListener.yaml
 apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
@@ -267,19 +293,19 @@ spec:
             name: "github"
           params:
             - name: "eventTypes"
-              value: [push]
+              value: [pull_request]
             - name: "overlays"
               value:
               - key: truncated_sha
                 expression: "body.pull_request.head.sha.truncate(7)"
               - key: branch_name
                 expression: "body.ref"
-        - name: "only when push detected to specified branch"
+        - name: "only when specified PR action detected"
           ref:
             name: "cel"
           params:
             - name: "filter"
-              value:  "body.ref in  [\"refs/heads/master\"]"
+              value: "body.action in ['opened','synchronize','reopened'] "
       bindings:
         - ref: prod
       template:
@@ -329,7 +355,6 @@ spec:
     - name: image-cache
     - name: ssh-creds
     - name: docker-creds-cm
-    - name: kubeconfig
 
   results:
 
@@ -354,76 +379,38 @@ spec:
         value: git@github.com:cogitogroupltd/docker-nginx-hello-world
       - name: revision
         value: $(params.git_revision)
-    - name: ecr-build-push
+    - name: buildah-build-push
       taskRef:
-        name: ecr-build-push
+        name: buildah-build
       runAfter: [git-clone]
       workspaces:
 
-      - name: git-pvc
+      - name: source
         workspace: git-pvc
+      - name: dockerconfig
+        workspace: docker-creds-cm
 
       params:
-      - name: app_short_name
-        value: nginx
-      - name: AWS_REGION
-        value: eu-west-1
-      - name: AWS_ECR_REPOSITORY
-        value: test
-      - name: AWS_ECR_ACCOUNT_ID
-        value: "009453609091"
-      - name: AWS_ACCESS_KEY_ID
-        value: AKIAQEEX__EXAMPLE__RNSP5K
-      - name: AWS_SECRET_ACCESS_KEY
-        value: E+fkkgIuTS1H__EXAMPLE__+2bgoWP+K
-      - name: docker_tag_version
-        value: $(params.git_revision)
-      - name: stage
-        value: prod
-      - name: arch
-        value: defaultarch
-    - name: git-clone-infra
+      - name: IMAGE
+        value: cogitoexample/docker-nginx-hello-world
+    - name: rolling-update
       taskRef:
-        name: git-clone
-      runAfter: [ecr-build-push]
-      workspaces:
-
-      - name: ssh-directory
-        workspace: ssh-creds
-      - name: output
-        workspace: git-pvc
+        name: rolling-update
+      runAfter: [buildah-build-push]
 
       params:
-      - name: url
-        value: git@github.com:cogitogroupltd/helm-chart-boilerplate
-      - name: revision
-        value: main
-      - name: deleteExisting
-        value: false
-      - name: subdirectory
-        value: helm-chart-boilerplate
-    - name: helm-deploy
-      taskRef:
-        name: helm-deploy
-      runAfter: [git-clone-infra]
-      workspaces:
-
-      - name: git-pvc
-        workspace: git-pvc
-
-      params:
-      - name: AWS_ECR_ACCOUNT_ID
-        value: "009453609091"
-      - name: AWS_ACCESS_KEY_ID
-        value: AKIAQEEX__EXAMPLE__RNSP5K
-      - name: AWS_SECRET_ACCESS_KEY
-        value: E+fkkgIuTS1H__EXAMPLE__+2bgoWP+K
-      - name: app_short_name
-        value: nginx
-      - name: docker_tag_version
+      - name: deployment
+        value: nginx-app
+      - name: namespace
+        value: default
+      - name: tag
         value: $(params.git_revision)
-      - name: stage
-        value: prod
+      - name: git_repository_name
+        value: $(params.git_repository_name)
+      - name: docker_registry
+        value: cogitoexample
+      - name: docker_repository
+        value: docker-nginx-hello-world
 # / Global Task calling
 ---
 # Source: pipeline/templates/buildah-build/Task.yaml
@@ -521,6 +508,210 @@ spec:
   volumes:
   - name: varlibcontainers
     emptyDir: {}
+---
+# Source: pipeline/templates/create-webhook/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "pipelines-create-webhook"
+  namespace: tekton-resources
+spec:
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+  description: >
+    Creates a Github Webhook in a specified repository in order to send GitHub events to EventListeners.
+    Run this Task if Pipelines need to be automatically triggered by any event.
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python:latest
+    volumeMounts:
+    - name: github-secret
+      mountPath: /var/secret
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Creating Webhook"
+      pip install kubernetes
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import base64
+      import requests
+      import json
+
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      # Read Github token
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # create Github webhook and return id
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+      data = '{"name": "web","active": true,"events": $(params.WebhookEvents) ,"config": {"url": "https://$(params.ExternalDomain)","content_type": "json","insecure_ssl": "1" }}'
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.post('https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks', data=data, headers=Headers)
+      print(x.text)
+      json_response=json.loads(x.text)
+      webhook_id=str(json_response['id'])
+      # Encode Hook ID as base64 to save in configMap
+      urlSafeEncodedBytes = base64.urlsafe_b64encode(webhook_id.encode("utf-8"))
+      urlSafeEncodedStr = str(urlSafeEncodedBytes, "utf-8")
+
+      # Create ConfigMap containing ID for the delete-webhook job
+      api_instance = client.CoreV1Api()
+      delete=False
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          print(len(api_response.items))
+          if len(api_response.items) == 1 :
+            delete=True
+          # print(api_response)
+      except Exception as e:
+          print("No configMap found, creating pipelines to store Webhook ID")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
+      api_instance.create_namespaced_config_map(
+          body=client.V1ConfigMap(
+              metadata=client.V1ObjectMeta(
+                  name="pipelines-create-webhook",
+                  namespace="tekton-resources"
+              ),
+              data={
+                  "id": urlSafeEncodedStr
+              }
+          ),
+          namespace="tekton-resources"
+      )
+      print("Created configMap pipelines with Webhook id=%s" % webhook_id)
+      EOF
+---
+# Source: pipeline/templates/delete-webhook/Task.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "pipelines-delete-webhook"
+  namespace: tekton-resources
+spec:
+  description: >-
+    This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
+
+    The create-webhook Task will create a webhook and store the webhook ID in a configMap. 
+    The configmap is solely used by the delete-webhook task.
+
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python
+    volumeMounts:
+
+    - name: github-secret
+      mountPath: /var/secret
+
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Deleting Webhook"
+      pip install kubernetes
+      
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import requests
+      import base64
+      import json
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # Retrieve webhook id from configmap
+      api_instance = client.CoreV1Api()
+      try: 
+        api_response = api_instance.read_namespaced_config_map(namespace="tekton-resources", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
+        webhook_id_b64=api_response.data["id"]
+        webhook_id=base64.b64decode(webhook_id_b64).decode("utf-8")
+        
+      except Exception as e:
+        print("Exception when calling CoreV1Api->read_namespaced_config_map: %s\n" % e)
+
+      # Send request to delete the webhook
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.delete("https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      else:
+        x = requests.delete("https://$(params.GitHubDomain)/api/v3/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks/%s" % webhook_id, headers=Headers)
+        if x.status_code != 204:
+          print("Failed deleting webhook, status code %s" % x.status_code)
+      print("deleted webhook_id: %s" % webhook_id)
+      # Delete configMap containing webhook_id
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          delete=True
+      except Exception as e:
+          print("No configMap found called pipelines")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
+      EOF
 ---
 # Source: pipeline/templates/git-clone/task.yaml
 #ref: https://hub.tekton.dev/tekton/task/git-clone
@@ -962,156 +1153,6 @@ spec:
     - name: LOG_LEVEL
       value: $(params.log_level)
 ---
-# Source: pipeline/templates/task-definition/Task.yaml
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: ecr-build-push
-  namespace: tekton-resources
-  labels:
-    app.kubernetes.io/version: "0.2"
-  annotations:
-    tekton.dev/pipelines.minVersion: "0.17.0"
-    tekton.dev/categories: Kubernetes
-    tekton.dev/tags: CLI, kubectl
-    tekton.dev/displayName: "kubernetes actions"
-    tekton.dev/platforms: "linux/amd64"
-spec:
-
-  description: This task does a AWS CLI command to login to ECR, builds the docker image and pushes it to ECR
-
-  volumes:
-  - hostPath:
-      path: /var/run/docker.sock
-    name: docker
-  results:
-  workspaces:
-  - description: git source volume
-    name: git-pvc
-  stepTemplate:
-  sidecars:
-  params:
-  - name: app_short_name
-    type: string
-  - default: .
-    name: location
-    type: string
-  - default: ""
-    name: AWS_ECR_REPOSITORY
-    type: string
-  - default: ""
-    name: AWS_ECR_ACCOUNT_ID
-    type: string
-  - default: ""
-    name: AWS_ACCESS_KEY_ID
-    type: string
-  - default: ""
-    name: AWS_SECRET_ACCESS_KEY
-    type: string
-  - default: eu-west-1
-    name: AWS_REGION
-    type: string
-  - default: master
-    name: docker_tag_version
-    type: string
-  - default: defaultstage
-    name: stage
-    type: string
-  - default: arm64
-    name: arch
-    type: string
-  steps:
-
-  - env:
-    - name: location
-      value: $(params.location)
-    - name: AWS_ACCESS_KEY_ID
-      value: $(params.AWS_ACCESS_KEY_ID)
-    - name: AWS_SECRET_ACCESS_KEY
-      value: $(params.AWS_SECRET_ACCESS_KEY)
-    image: cogitoexample/cicd-agent:0.02
-    name: ecr-build-push
-    script: "set -x \nset -e\n# Build image\naws ecr get-login-password --region $(params.AWS_REGION)
-      | docker login --username AWS --password-stdin \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com\"\ndocker
-      build --network=host -t \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)\"
-      \"$location\" --build-arg NPM_TOKEN=\"${NPM_TOKEN}\"\ndocker push \"$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com/$(params.AWS_ECR_REPOSITORY):$(params.docker_tag_version)\"
-      \ \n"
-    volumeMounts:
-    - mountPath: /var/run/docker.sock
-      name: docker
-    workingDir: $(workspaces.git-pvc.path)
----
-# Source: pipeline/templates/task-definition/Task.yaml
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: helm-deploy
-  namespace: tekton-resources
-  labels:
-    app.kubernetes.io/version: "0.2"
-  annotations:
-    tekton.dev/pipelines.minVersion: "0.17.0"
-    tekton.dev/categories: Kubernetes
-    tekton.dev/tags: CLI, kubectl
-    tekton.dev/displayName: "kubernetes actions"
-    tekton.dev/platforms: "linux/amd64"
-spec:
-
-  description: This task does a helm deployment to EKS
-
-  volumes:
-  results:
-  workspaces:
-  - description: git source volume
-    name: git-pvc
-  stepTemplate:
-  sidecars:
-  params:
-  - default: ""
-    name: AWS_ECR_ACCOUNT_ID
-    type: string
-  - default: ""
-    name: AWS_ACCESS_KEY_ID
-    type: string
-  - default: ""
-    name: AWS_SECRET_ACCESS_KEY
-    type: string
-  - default: eu-west-1
-    name: AWS_REGION
-    type: string
-  - name: app_short_name
-    type: string
-  - default: master
-    name: docker_tag_version
-    type: string
-  - default: defaultstage
-    name: stage
-    type: string
-  steps:
-
-  - env:
-    - name: AWS_ACCESS_KEY_ID
-      value: $(params.AWS_ACCESS_KEY_ID)
-    - name: AWS_SECRET_ACCESS_KEY
-      value: $(params.AWS_SECRET_ACCESS_KEY)
-    - name: AWS_REGION
-      value: $(params.AWS_REGION)
-    - name: AWS_ECR_ACCOUNT_ID
-      value: $(params.AWS_ECR_ACCOUNT_ID)
-    image: cogitoexample/cicd-agent:0.02
-    name: helm-deploy
-    script: |
-      set -e
-      set -x
-      export stage="$(params.stage)"
-      export app_short_name="$(params.app_short_name)"
-      export docker_tag_version="$(params.docker_tag_version)"
-      # cat ./examples/complete/charts/${app_short_name}/values-override-${stage}.yaml | envsubst > values-override.yaml
-      kubectl delete secret regcred -n "${stage}" --ignore-not-found=true ;  kubectl create secret docker-registry regcred -n "${stage}" --docker-server="$(params.AWS_ECR_ACCOUNT_ID).dkr.ecr.$(params.AWS_REGION).amazonaws.com" --docker-username=AWS --docker-password="$(aws ecr get-login-password --region $(params.AWS_REGION))" --docker-email="whats@this.for"
-      helm upgrade --install "${app_short_name}" ./helm-chart-boilerplate/charts/common --namespace "${stage}" --create-namespace --values ./values-override.yaml --set image.tag="${docker_tag_version}" --wait --timeout 100s
-      kubectl rollout restart "deploy/${app_short_name}-app" --namespace "${stage}"
-    workingDir: $(workspaces.git-pvc.path)
----
 # Source: pipeline/templates/triggers/trigger.yaml
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
@@ -1139,11 +1180,11 @@ spec:
 
 
 
+    value: $(body.pull_request.head.sha)
 
 
 
 
-    value: $(body.head_commit.id)
 
 
 
@@ -1185,9 +1226,6 @@ spec:
       pipelineRef:
         name: prod
       serviceAccountNames:
-        
-        
-        
         
       params:
       - name: git_revision

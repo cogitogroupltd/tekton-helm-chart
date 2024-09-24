@@ -4,30 +4,6 @@ docker_config_json:
 configmap_kube_conf: kube-config
 secret_slack_webhook_uri: 
 
-taskdefinitions:
-  enabled: true
-  serviceAccounts:
-  - name: rolling-update
-    yaml: |-
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: rolling-update
-        namespace: tekton-resources
-      ---
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: "cluster-administrator-ecr-build"
-      subjects:
-        - kind: ServiceAccount
-          name: "rolling-update"
-          namespace: tekton-resources
-      roleRef:
-        kind: ClusterRole
-        name: cluster-admin
-        apiGroup: rbac.authorization.k8s.io
-
 pipelines:
   - name: prod 
     params:
@@ -81,6 +57,7 @@ pipelines:
     - name: rolling-update
       taskRef:
         name: rolling-update
+      admin: true
       params:
       - name: deployment
         value: nginx-app
