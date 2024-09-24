@@ -28,7 +28,7 @@ Description:
 
 - Beware this will create a secret in the cluster with the private SSH key located at `.auth/id_rsa`
 
-- Enter your Dockerhub username/password credentials in place of $DOCKERHUB_USER and $CONTAINER_REGISTRY_PASSWORD
+- Enter your Dockerhub username/password credentials in place of $CONTAINER_REGISTRY_USERNAME and $CONTAINER_REGISTRY_PASSWORD
 
 
 ```bash
