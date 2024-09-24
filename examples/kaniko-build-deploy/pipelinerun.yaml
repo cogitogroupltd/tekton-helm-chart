@@ -10,8 +10,8 @@ spec:
   - name: git_revision
     value: latest
   taskRunSpecs:
-    - pipelineTaskName: rolling-update
-      taskServiceAccountName: rolling-update
+    - pipelineTaskName: rolling-update # ref from values-override.yaml pipelines[].prod.taskcall.name
+      taskServiceAccountName: pipelines-tekton-resources-rolling-update # ref from templates/global/serviceAccount.yaml
   workspaces:
     - name: git-pvc
       volumeClaimTemplate:

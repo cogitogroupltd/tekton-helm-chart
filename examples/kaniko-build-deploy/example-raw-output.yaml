@@ -12,7 +12,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-cleanup"
-  namespace: tekton-resources
+  namespace: tekton-resource
 ---
 # Source: pipeline/templates/global/serviceAccount.yaml
 apiVersion: v1
@@ -20,39 +20,31 @@ kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-default-sa"
 ---
-# Source: pipeline/templates/task-definition/serviceAccount.yaml
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: rolling-update
-  namespace: tekton-resources
----
 # Source: pipeline/templates/triggers/role.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "pipelines-tekton-triggers-sa"
-  namespace: tekton-resources
+  namespace: tekton-resource
 ---
 # Source: pipeline/templates/create-webhook/secret-github.yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: github-secret
-  namespace: tekton-resources
+  namespace: tekton-resource
 data:
-  token: 
-  secret: 
+  token: UlU1VVJWSlVUMHRGVGc9PQ==
+  secret: UlU1VVJWSlVUMHRGVGc9PQ==
 ---
 # Source: pipeline/templates/git-clone/secrets.yaml
 kind: Secret
 apiVersion: v1
 metadata:
   name: "pipelines-ssh-key"
-  namespace: tekton-resources
+  namespace: tekton-resource
 data:
-  id_rsa: 
+  id_rsa: aGk=
 ---
 # Source: pipeline/templates/kaniko-build/secret-docker-config.yaml
 apiVersion: v1
@@ -60,19 +52,19 @@ kind: Secret
 type: generic
 metadata:
   name: "pipelines-docker-config"
-  namespace: tekton-resources
+  namespace: tekton-resource
 data:
-  config.json: 
+  config.json: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsiYXV0aCI6Ik9nPT0iLCJlbWFpbCI6InRoaXNlbWFpbEBpc2lnbm9yZWQuY29tIn19fQo=
 ---
 # Source: pipeline/templates/triggers/github-token.yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: github-token
-  namespace: tekton-resources
+  namespace: tekton-resource
 type: Opaque
 data:
-  token: 
+  token: UlU1VVJWSlVUMHRGVGc9PQ==
 ---
 # Source: pipeline/templates/cronjob.yaml
 apiVersion: v1
@@ -80,17 +72,17 @@ kind: ConfigMap
 metadata:
   labels:
   name: pipelines-tekton-cleanup-cm
-  namespace: tekton-resources
+  namespace: tekton-resource
 data:
   runtimeConfig.sh: |
-    kubectl get pvc -n tekton-resources | awk '{print $1}' | xargs kubectl delete pvc -n tekton-resources
+    kubectl get pvc -n tekton-resource | awk '{print $1}' | xargs kubectl delete pvc -n tekton-resource
 ---
 # Source: pipeline/templates/rolling-update/cm-kubeconfig.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "pipelines-kube-config"
-  namespace: tekton-resources
+  namespace: tekton-resource
 data:
   kubeconfig: |-
     apiVersion: v1
@@ -128,7 +120,7 @@ data:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: "pipelines-tekton-triggers-cr"
+  name: "pipelines-tekton-resource-tekton-triggers-cr"
 rules:
 - apiGroups:
   - tekton.dev
@@ -151,6 +143,7 @@ rules:
   resources:
   - clusterinterceptors
   - clustertriggerbindings
+  - interceptors
   verbs:
   - get
   - list
@@ -160,11 +153,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-tekton-cronjob"
+  name: "pipelines-tekton-resource-cronjob-cleanup"
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-cleanup"
-    namespace: tekton-resources
+    namespace: tekton-resource
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -174,25 +167,11 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-tekton-resources-pipelines"
+  name: "pipelines-tekton-resource-clusteradmin"
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-default-sa"
-    namespace: tekton-resources
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
----
-# Source: pipeline/templates/task-definition/serviceAccount.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: "cluster-administrator-ecr-build"
-subjects:
-  - kind: ServiceAccount
-    name: "rolling-update"
-    namespace: tekton-resources
+    namespace: tekton-resource
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -202,14 +181,14 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "pipelines-tekton-triggers-crb"
+  name: "pipelines-tekton-resource-trigger-admin"
 subjects:
   - kind: ServiceAccount
     name: "pipelines-tekton-triggers-sa"
-    namespace: tekton-resources
+    namespace: tekton-resource
 roleRef:
   kind: ClusterRole
-  name: "pipelines-tekton-triggers-cr"
+  name: "pipelines-tekton-resource-tekton-triggers-cr"
   apiGroup: rbac.authorization.k8s.io
 ---
 # Source: pipeline/templates/triggers/role.yaml
@@ -217,7 +196,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "pipelines-tekton-triggers-role"
-  namespace: tekton-resources
+  namespace: tekton-resource
 rules:
 - apiGroups:
   - tekton.dev
@@ -254,7 +233,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: "pipelines-tekton-triggers-rb"
-  namespace: tekton-resources
+  namespace: tekton-resource
 subjects:
 - kind: ServiceAccount
   name: "pipelines-tekton-triggers-sa"
@@ -268,7 +247,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: pipelines-tekton-cleanup
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   schedule: "30 2 * * *"
   startingDeadlineSeconds: 20
@@ -300,12 +279,15 @@ spec:
 # Source: pipeline/templates/custom-task/serviceAccount.yaml
 ---
 ---
+# Source: pipeline/templates/global/clusterRoleBinding.yaml
+---
+---
 # Source: pipeline/templates/triggers/eventListener.yaml
 apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: dev-listener
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   triggers:
     - name: github-listener-prod
@@ -351,7 +333,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: prod
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   params:
 
@@ -376,7 +358,6 @@ spec:
     - name: image-cache
     - name: ssh-creds
     - name: docker-creds-cm
-    - name: kubeconfig
 
   results:
 
@@ -398,49 +379,45 @@ spec:
 
       params:
       - name: url
-        value: "git@github.com:dockerised/docker-nginx-hello-world"
+        value: git@github.com:cogitogroupltd/docker-nginx-hello-world
       - name: revision
-        value: "$(params.git_revision)"
+        value: $(params.git_revision)
     - name: kaniko-build
       taskRef:
         name: kaniko-build
       runAfter: [git-clone]
       workspaces:
 
-      - name: source
+      - name: git-pvc
         workspace: git-pvc
       - name: dockerconfig
         workspace: docker-creds-cm
 
       params:
       - name: DOCKER_REGISTRY
-        value: "cogitoexample"
+        value: cogitoexample
       - name: DOCKER_REPOSITORY
-        value: "docker-nginx-hello-world"
+        value: docker-nginx-hello-world
       - name: DOCKER_IMAGE_TAG
-        value: "$(params.git_revision)"
+        value: $(params.git_revision)
     - name: rolling-update
       taskRef:
         name: rolling-update
       runAfter: [kaniko-build]
-      workspaces:
-
-      - name: kubeconfig-dir
-        workspace: kubeconfig
 
       params:
       - name: deployment
-        value: "nginx-app"
+        value: nginx-app
       - name: namespace
-        value: "default"
+        value: default
       - name: tag
-        value: "$(params.git_revision)"
+        value: $(params.git_revision)
       - name: git_repository_name
-        value: "$(params.git_repository_name)"
+        value: $(params.git_repository_name)
       - name: docker_registry
-        value: "cogitoexample"
+        value: cogitoexample
       - name: docker_repository
-        value: "docker-nginx-hello-world"
+        value: docker-nginx-hello-world
 # / Global Task calling
 ---
 # Source: pipeline/templates/buildah-build/Task.yaml
@@ -544,7 +521,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-create-webhook"
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   volumes:
   - name: github-secret
@@ -619,7 +596,7 @@ spec:
       api_instance = client.CoreV1Api()
       delete=False
       try:
-          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resource", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
           print(len(api_response.items))
           if len(api_response.items) == 1 :
             delete=True
@@ -627,18 +604,18 @@ spec:
       except Exception as e:
           print("No configMap found, creating pipelines to store Webhook ID")
       if delete:
-        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resource")  
       api_instance.create_namespaced_config_map(
           body=client.V1ConfigMap(
               metadata=client.V1ObjectMeta(
                   name="pipelines-create-webhook",
-                  namespace="tekton-resources"
+                  namespace="tekton-resource"
               ),
               data={
                   "id": urlSafeEncodedStr
               }
           ),
-          namespace="tekton-resources"
+          namespace="tekton-resource"
       )
       print("Created configMap pipelines with Webhook id=%s" % webhook_id)
       EOF
@@ -648,7 +625,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "pipelines-delete-webhook"
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   description: >-
     This Tasks works with repository webhooks which are used to trigger Tekton Pipelines.
@@ -714,7 +691,7 @@ spec:
       # Retrieve webhook id from configmap
       api_instance = client.CoreV1Api()
       try: 
-        api_response = api_instance.read_namespaced_config_map(namespace="tekton-resources", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
+        api_response = api_instance.read_namespaced_config_map(namespace="tekton-resource", name=("%s" % os.getenv("$(params.GitHubSecretName)","pipelines-create-webhook")))
         webhook_id_b64=api_response.data["id"]
         webhook_id=base64.b64decode(webhook_id_b64).decode("utf-8")
         
@@ -735,12 +712,12 @@ spec:
       print("deleted webhook_id: %s" % webhook_id)
       # Delete configMap containing webhook_id
       try:
-          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resources", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
+          api_response = api_instance.list_namespaced_config_map(namespace="tekton-resource", label_selector='metadata.name=pipelines-create-webhook',timeout_seconds="2")
           delete=True
       except Exception as e:
           print("No configMap found called pipelines")
       if delete:
-        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resources")  
+        api_response = api_instance.delete_namespaced_config_map(name="pipelines-create-webhook", namespace="tekton-resource")  
       EOF
 ---
 # Source: pipeline/templates/git-clone/task.yaml
@@ -749,7 +726,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "git-clone"
-  namespace: tekton-resources
+  namespace: "tekton-resource"
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -983,7 +960,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: "kaniko-build"
-  namespace: tekton-resources
+  namespace: tekton-resource
   labels:
     app.kubernetes.io/version: "0.5"
   annotations:
@@ -1021,7 +998,7 @@ spec:
     description: The image on which builds will run (default is v1.5.1)
     default: gcr.io/kaniko-project/executor:v1.7.0@sha256:8504bde9a9a8c9c4e9a4fe659703d265697a36ff13607b7669a4caa4407baa52
   workspaces:
-  - name: source
+  - name: git-pvc
     description: Holds the context and docker file
   - name: dockerconfig
     description: Includes a docker `config.json`
@@ -1034,27 +1011,14 @@ spec:
   results:
   - name: IMAGE-DIGEST
     description: Digest of the image just built.
-
   steps:
-  - name: warm-cache
-    image: gcr.io/kaniko-project/warmer
-    args:
-    - --cache-dir=/cache
-    - --image=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY)
-    resources:
-      limits:
-        cpu: 2
-        memory: 4096Mi
-      requests:
-        cpu: 1
-        memory: 1048Mi
   - name: build-and-push
-    workingDir: $(workspaces.source.path)
+    workingDir: $(workspaces.git-pvc.path)
     image: $(params.BUILDER_IMAGE)
     args:
     - $(params.EXTRA_ARGS[*])
     - --dockerfile=$(params.DOCKERFILE)
-    - --context=$(workspaces.source.path)/$(params.CONTEXT)  # The user does not need to care the workspace and the source.
+    - --context=$(params.CONTEXT)  # The user does not need to care the workspace and the source.
     - --destination=$(params.DOCKER_REGISTRY)/$(params.DOCKER_REPOSITORY):$(params.DOCKER_IMAGE_TAG)
     - --cache=true
     - --digest-file=/tekton/results/IMAGE-DIGEST
@@ -1071,7 +1035,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: rolling-update
-  namespace: tekton-resources
+  namespace: tekton-resource
   labels:
     app.kubernetes.io/version: "0.2"
   annotations:
@@ -1104,17 +1068,12 @@ spec:
       default: "master"
   steps:
     - name: rolling-update
-      image: docker.io/amazon/aws-cli:2.0.52@sha256:1506cec98a7101c935176d440a14302ea528b8f92fcaf4a6f1ea2d7ecef7edc4 #tag: 2.0.52 #image is huge
+      image: cogitoexample/cicd-agent:0.02
       script: |
         set -xe
-        cd /tmp
-        rm -f /usr/local/bin/kubectl
-        curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/arm64/kubectl"
-        chmod +x ./kubectl
-        mv ./kubectl /usr/local/bin/kubectl
-        chown root: /usr/local/bin/kubectl
-        kubectl version
-        kubectl set image deploy/$(params.deployment) "$(params.deployment)-service=$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        kubectl get deployment $(params.deployment) --namespace $(params.namespace) | grep -iq "$(params.deployment)" || kubectl create deployment $(params.deployment) --namespace $(params.namespace) --image="$(params.docker_registry)/$(params.docker_repository):$(params.tag)"
+        # The set image command has this syntax `kubectl set image deploy/$DEPLOYMENT_NAME $CONTAINER_NAME=cogitoexample/docker-nginx-hello-world --namespace default`
+        kubectl set image deploy/$(params.deployment) "$(params.docker_repository)=$(params.docker_registry)/$(params.docker_repository):$(params.tag)" --namespace $(params.namespace)
         kubectl rollout restart deployment/$(params.deployment) --namespace $(params.namespace)
         kubectl rollout status deployment/$(params.deployment) --namespace $(params.namespace)
 ---
@@ -1123,7 +1082,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: send-to-webhook-slack
-  namespace: tekton-resources
+  namespace: tekton-resource
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
@@ -1206,7 +1165,7 @@ apiVersion: triggers.tekton.dev/v1alpha1
 kind: Trigger
 metadata:
   name: prod
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   interceptors:
     - ref:
@@ -1221,7 +1180,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: prod
-  namespace: tekton-resources
+  namespace: tekton-resource
 spec:
   params:
   - name: git_revision
@@ -1274,7 +1233,6 @@ spec:
       pipelineRef:
         name: prod
       serviceAccountNames:
-        
         
       params:
       - name: git_revision
