@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-{{ .Release.Namespace }}-{{ .Release.Name }}"
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-clusteradmin"
 subjects:
   - kind: ServiceAccount
     name: "{{ include "generic.fullname" $ }}-tekton-default-sa"
@@ -21,7 +21,7 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-{{ $task.name }}"
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $task.name }}"
 subjects:
   - kind: ServiceAccount
     name: "{{ $task.name }}"

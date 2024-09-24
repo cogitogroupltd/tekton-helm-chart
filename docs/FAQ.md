@@ -97,7 +97,7 @@ taskdefinitions:
       apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
       metadata:
-        name: "cluster-administrator-helm-deploy"
+        name: "unique-name-cluster-admin-helm-deploy"
       subjects:
         - kind: ServiceAccount
           name: "helm-deploy"

@@ -37,7 +37,7 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: "{{ include "generic.fullname" $ }}-tekton-triggers-cr"
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-tekton-triggers-cr"
 rules:
 - apiGroups:
   - tekton.dev
@@ -69,14 +69,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "{{ include "generic.fullname" $ }}-tekton-triggers-crb"
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-trigger-admin"
 subjects:
   - kind: ServiceAccount
     name: "{{ include "generic.fullname" $ }}-tekton-triggers-sa"
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: "{{ include "generic.fullname" $ }}-tekton-triggers-cr"
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-tekton-triggers-cr"
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1

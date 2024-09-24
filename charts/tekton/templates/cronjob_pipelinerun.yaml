@@ -55,7 +55,7 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-tekton-cron-tekton-pipelines"
+  name: "{{ .Release.Name }}-{{ .Release.Namespace }}-cronjob"
 subjects:
   - kind: ServiceAccount
     name: "cronjob-tekton-pipelines-cronjob"
@@ -68,7 +68,7 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "cluster-administrator-tekton-deploy-cronjob"
+  name: "{{ .Release.Name }}-{{ .Release.Namespace }}-deploy-cronjob"
 subjects:
   - kind: ServiceAccount
     name: cronjob-tekton-pipelines-cronjob 
