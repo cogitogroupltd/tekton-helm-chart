@@ -40,7 +40,7 @@ docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${DOCKERHUB_PASSWORD}" 
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"thisemail@isignored.com"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml
+helm template pipelines -n tekton-resources --create-namespace tekton/pipeline --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml | kubectl apply -n tekton-resources -f -
 ```
 
 ## Run a pipeline manually
@@ -67,5 +67,5 @@ or using port-forward
 To uninstall the Tekton pipeline
 
 ```bash
-helm delete pipelines -n tekton-resources
+helm template pipelines -n tekton-resources --create-namespace tekton/pipeline --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --values ./values-override.yaml | kubectl delete -n tekton-resources -f -
 ```

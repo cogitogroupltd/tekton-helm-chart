@@ -61,6 +61,7 @@ pipelines:
     - name: rolling-update
       taskRef:
         name: rolling-update
+      admin: true
       params:
       - name: deployment
         value: nginx-app 

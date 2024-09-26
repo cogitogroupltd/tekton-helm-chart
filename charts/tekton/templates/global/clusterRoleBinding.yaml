@@ -21,7 +21,7 @@ metadata:
   name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $taskcall.name }}"
 subjects:
   - kind: ServiceAccount
-    name: "{{ $taskcall.name }}"
+    name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $taskcall.name }}"
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: ClusterRole

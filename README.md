@@ -35,6 +35,7 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 ###  1.1. <a name='Features'></a>Features
 
 - Helm chart to deploy Tekton pipelines and all dependencies except Tekton Custom Resource Definitions
+- Duplicate CI/CD Pipelines by deploying Helm Release to another namesapce  
 - Simplifies developer experience with automated Tekton resource linking  
 - Declarative and immutable pipelines 
 - Least-privilege with isolated permissions for each task run
@@ -110,15 +111,15 @@ See example [README.md](./examples/dind-ecr-build-deploy/README.md)
 
 ##  3. <a name='Todo'></a>Todo
 
-- [ ] Allow multiple installations of helm chart into same cluster; currently conflicts when ClusteRoles and ClusterRoleBindings are not unique
-- [ ] Helm not correctly reconciling Task definition updates, despite 
+- [ ] Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
 - [ ] Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
 - [ ] Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
 - [ ] Examples - Incorporate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege
-- [ ] Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
 - [ ] Move resource defs from eventListener
 - [ ] Remove dependency on cluster-admin ClusterRole by creating a new tekton-cluster-admin ClusterRole
 - [ ] Documentation for Windows
+- [ ] Slim down rolling-update container image 
+- [ ] Simple yaml drop-in for Tasks in from [catalog](https://github.com/tektoncd/catalog)
 - [ ] Auto generate dynamic \_taskRun.yaml for custom-task in helm output via Notes.txt
 - [ ] Auto generate a dynamic \_pipelineRun.yaml for each pipeline in helm output via Notes.txt
 - [ ] Add `taskcall[0].steps` to override `taskdefinition[0].steps` so that a developer can use the same task but have the steps overridden. This fix requires dynamic task creation in the background and hence post-pended GUID mapping.

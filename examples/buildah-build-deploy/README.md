@@ -39,7 +39,7 @@ docker_auth="$(echo -n "${CONTAINER_REGISTRY_USERNAME}":"${CONTAINER_REGISTRY_PA
 tee "config.json" > /dev/null <<EOF
 {"auths":{"https://index.docker.io/v1/":{"auth":"$docker_auth","email":"systems@cogitogroup.co.uk"}}}
 EOF
-helm upgrade --install pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml
+helm template pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml | kubectl apply -n tekton-resources -f -
 ```
 
 
@@ -95,5 +95,5 @@ kubectl exec -it debug-pod -- curl -X POST http://el-dev-listener.tekton-pipelin
 To uninstall the Tekton pipeline
 
 ```bash
-helm delete pipelines -n tekton-resources
+helm template pipelines -n tekton-resources --create-namespace tekton/pipeline --set github_token="$(echo -n "ENTERTOKEN" | base64)" --set secret_ssh_key="$(cat $SSH_KEY_LOCATION)" --set-file=docker_config_json=config.json --values ./values-override.yaml | kubectl delete -n tekton-resources -f -
 ```
