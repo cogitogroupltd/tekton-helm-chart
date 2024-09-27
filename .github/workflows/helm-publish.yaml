@@ -26,6 +26,9 @@ jobs:
         VERSION_REGEX="([0-9]+\.[0-9]+\.[0-9]+)"
         PR_TITLE="${{ github.event.pull_request.title }}"
         PR_BODY="${{ github.event.pull_request.body }}"
+        PR_BRANCH="${{ github.head_ref }}"
+        echo "Branch name: $PR_BRANCH"
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
         
         if [[ "$PR_TITLE" =~ $VERSION_REGEX ]]; then
           NEW_VERSION="${BASH_REMATCH[0]}"
@@ -76,6 +79,10 @@ jobs:
         GH_PAGES_BRANCH="gh-pages"
         git fetch origin $GH_PAGES_BRANCH
         git checkout $GH_PAGES_BRANCH
+        git checkout "${{ github.head_ref }}" -- charts
+        CHART_DIR="./charts/tekton"
+        helm package $CHART_DIR --destination $CHART_DIR
+        TGZ_FILE="$CHART_DIR/pipeline-${NEW_VERSION}.tgz"
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
           helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
@@ -83,9 +90,10 @@ jobs:
           helm repo index . --url https://<username>.github.io/<repo>
         fi
         CHART_YAML_PATH="./charts/tekton/Chart.yaml"
+        git add $CHART_YAML_PATH $TGZ_FILE index.yaml
         git commit -m "Release Helm chart version $NEW_VERSION"
         git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-        git push origin $GH_PAGES_BRANCH --tags 
+        git push origin $GH_PAGES_BRANCH --tags
       env:
         NEW_VERSION: ${{ env.NEW_VERSION }}
 
