@@ -1,0 +1,127 @@
+name: Publish Helm Chart
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Step 2: Extract version from pull request title or description, fallback to Chart.yaml version
+    - name: Extract version from PR or Chart.yaml
+      if: github.event_name == 'pull_request'
+      id: extract_version
+      run: |
+        VERSION_REGEX="([0-9]+\.[0-9]+\.[0-9]+)"
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        PR_BODY="${{ github.event.pull_request.body }}"
+        
+        if [[ "$PR_TITLE" =~ $VERSION_REGEX ]]; then
+          NEW_VERSION="${BASH_REMATCH[0]}"
+        elif [[ "$PR_BODY" =~ $VERSION_REGEX ]]; then
+          NEW_VERSION="${BASH_REMATCH[0]}"
+        else
+          # If no version found in PR, read the version from Chart.yaml and increment minor version
+          echo "Version not found in PR title or description, falling back to Chart.yaml version."
+          
+          # Extract version from Chart.yaml
+          CURRENT_VERSION=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
+          
+          # Increment the minor version (X.Y.Z -> X.(Y+1).0)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          MINOR=$((MINOR + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.0"
+        fi
+
+        echo "Using version: $NEW_VERSION"
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+
+    # Step 3: Set up Helm CLI
+    - name: Set up Helm CLI
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.8.0
+
+    # Step 4: Package the Helm chart
+    - name: Package Helm chart
+      run: |
+        CHART_DIR="./charts/tekton"
+        helm package $CHART_DIR --destination $CHART_DIR
+      env:
+        NEW_VERSION: ${{ env.NEW_VERSION }}
+
+    # Step 5: Generate the SHA256 digest for the new .tgz file
+    - name: Generate SHA256 digest for .tgz file
+      run: |
+        CHART_DIR="./charts/tekton"
+        TGZ_FILE="$CHART_DIR/pipeline-${NEW_VERSION}.tgz"
+        SHA256=$(shasum -a 256 "$TGZ_FILE" | awk '{print $1}')
+        echo "Digest for $TGZ_FILE: $SHA256"
+
+    # Step 6: Commit and push to gh-pages branch
+    - name: Push to gh-pages
+      run: |
+        git stash
+        GH_PAGES_BRANCH="gh-pages"
+        git fetch origin $GH_PAGES_BRANCH
+        git checkout $GH_PAGES_BRANCH
+        git stash pop
+        mv "$TGZ_FILE" .
+        if [ -f index.yaml ]; then
+          helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
+        else
+          helm repo index . --url https://<username>.github.io/<repo>
+        fi
+        CHART_YAML_PATH="./charts/tekton/Chart.yaml"
+        sed -i "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
+        git add pipeline-${NEW_VERSION}.tgz index.yaml charts/tekton/Chart.yaml
+        git commit -m "Release Helm chart version $NEW_VERSION"
+        git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+        git push origin $GH_PAGES_BRANCH --tags
+      env:
+        NEW_VERSION: ${{ env.NEW_VERSION }}
+
+    # Step 7: Create a GitHub Release and upload .tgz file
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: "v${{ env.NEW_VERSION }}"
+        files: ./charts/tekton/pipeline-${{ env.NEW_VERSION }}.tgz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Step 8: Verify published version via Helm CLI
+  verify:
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+    # Step 8.1: Set up Helm CLI
+    - name: Set up Helm CLI
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.8.0
+
+    # Step 8.2: Add Helm repo and update
+    - name: Add Helm repo
+      run: |
+        helm repo add tekton-charts https://<username>.github.io/<repo>
+        helm repo update
+
+    # Step 8.3: Search Helm chart and verify version
+    - name: Search Helm chart and verify version
+      run: |
+        helm search repo tekton-charts/pipeline
+        helm show chart tekton-charts/pipeline --version ${{ env.NEW_VERSION }}
