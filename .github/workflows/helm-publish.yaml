@@ -82,9 +82,12 @@ jobs:
         rm -fr ./charts/tekton/Chart.yaml
         # Step 1: Apply the stash
         git stash apply
+        
+        # Step 2: Resolve conflicts (ignore Chart.yaml)
+        # Since Chart.yaml is deleted in the gh-pages branch, we'll discard it
+        git restore --staged charts/tekton/Chart.yaml  # Unstage the file
+        git rm charts/tekton/Chart.yaml  # Remove it from the gh-pages branch
 
-        # Step 2: Resolve conflicts (take changes from stash)
-        git checkout --theirs .
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
           helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
