@@ -1,10 +1,6 @@
 name: Publish Helm Chart
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
   push:
     branches:
       - main
@@ -12,31 +8,24 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    outputs:
+      new_version: ${{ steps.extract_version.outputs.new_version }}
     steps:
     # Step 1: Checkout the repository
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Extract version from pull request title or description
-    - name: Extract version from PR
-      if: github.event_name == 'pull_request'
+    # Step 2: Extract version from Chart.yaml version
+    - name: Extract version from Chart.yaml
       id: extract_version
       run: |
-        VERSION_REGEX="([0-9]+\.[0-9]+\.[0-9]+)"
-        PR_TITLE="${{ github.event.pull_request.title }}"
-        PR_BODY="${{ github.event.pull_request.body }}"
-        
-        if [[ "$PR_TITLE" =~ $VERSION_REGEX ]]; then
-          NEW_VERSION="${BASH_REMATCH[0]}"
-        elif [[ "$PR_BODY" =~ $VERSION_REGEX ]]; then
-          NEW_VERSION="${BASH_REMATCH[0]}"
-        else
-          echo "Version not found in PR title or description."
-          exit 1
-        fi
+        # Extract version from Chart.yaml
+        NEW_VERSION=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
 
+        echo "Using version: $NEW_VERSION"
+        echo "::set-output name=new_version::$NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
 
     # Step 3: Set up Helm CLI
     - name: Set up Helm CLI
@@ -63,23 +52,30 @@ jobs:
     # Step 6: Commit and push to gh-pages branch
     - name: Push to gh-pages
       run: |
-        git stash
         GH_PAGES_BRANCH="gh-pages"
         git fetch origin $GH_PAGES_BRANCH
         git checkout $GH_PAGES_BRANCH
-        git stash pop
+        git fetch origin main
+        git checkout main -- charts
+        CHART_DIR="./charts/tekton"
+        helm package $CHART_DIR --destination $CHART_DIR
+        TGZ_FILE="$CHART_DIR/pipeline-${NEW_VERSION}.tgz"
+        ls $CHART_DIR
+        ls $TGZ_FILE
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
-          helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
+          helm repo index . --url https://cogitogrouptld.github.io/tekton-helm-chart --merge index.yaml
         else
-          helm repo index . --url https://<username>.github.io/<repo>
+          helm repo index . --url https://cogitogrouptld.github.io/tekton-helm-chart
         fi
         CHART_YAML_PATH="./charts/tekton/Chart.yaml"
-        sed -i "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
-        git add pipeline-${NEW_VERSION}.tgz index.yaml charts/tekton/Chart.yaml
+        git config --global user.email "actions@github.com"
+        git config --global user.name "$GITHUB_ACTOR"
+
+        git add $CHART_YAML_PATH pipeline-${NEW_VERSION}.tgz index.yaml
         git commit -m "Release Helm chart version $NEW_VERSION"
-        git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-        git push origin $GH_PAGES_BRANCH --tags
+        git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}" -f
+        git push origin $GH_PAGES_BRANCH --tags --force
       env:
         NEW_VERSION: ${{ env.NEW_VERSION }}
 
@@ -107,11 +103,11 @@ jobs:
     # Step 8.2: Add Helm repo and update
     - name: Add Helm repo
       run: |
-        helm repo add tekton-charts https://<username>.github.io/<repo>
+        helm repo add tekton-charts https://cogitogroupltd.github.io/tekton-helm-chart
         helm repo update
 
     # Step 8.3: Search Helm chart and verify version
     - name: Search Helm chart and verify version
       run: |
         helm search repo tekton-charts/pipeline
-        helm show chart tekton-charts/pipeline --version ${{ env.NEW_VERSION }}
+        helm show chart tekton-charts/pipeline --version ${{ needs.release.outputs.new_version }}
