@@ -48,9 +48,13 @@ jobs:
     # Step 6: Commit and push to gh-pages branch
     - name: Push to gh-pages
       run: |
+        # Stash the changes before switching branches
+        git stash
+        
         GH_PAGES_BRANCH="gh-pages"
         git fetch origin $GH_PAGES_BRANCH
         git checkout $GH_PAGES_BRANCH
+        git stash pop
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
           helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
