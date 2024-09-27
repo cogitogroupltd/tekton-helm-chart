@@ -14,18 +14,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Detect OS type and update Chart.yaml
-    - name: Detect OS type and update Chart.yaml version
+    # Step 2: Generate semantic version and update Chart.yaml
+    - name: Generate version and update Chart.yaml
       run: |
-        OS_TYPE=$(uname)
+        BASE_VERSION="0.5.2"
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        NEW_VERSION="${BASE_VERSION}+${SHORT_SHA}"
+        echo "New chart version: $NEW_VERSION"
+        
         CHART_YAML_PATH="./charts/tekton/Chart.yaml"
-        NEW_VERSION="${{ github.sha }}"
-        if [[ "$OS_TYPE" == "Darwin" ]]; then
-          sed -i '' "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
-        else
-          sed -i "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
-        fi
-        echo "Updated Chart.yaml with version $NEW_VERSION"
+        sed -i "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
 
     # Step 3: Set up Helm
     - name: Set up Helm CLI
@@ -37,14 +35,12 @@ jobs:
     - name: Package Helm chart
       run: |
         CHART_DIR="./charts/tekton"
-        CHART_NAME="pipeline"
         helm package $CHART_DIR --destination $CHART_DIR
 
     # Step 5: Generate the SHA256 digest for the new .tgz file
     - name: Generate SHA256 digest for .tgz file
       run: |
         CHART_DIR="./charts/tekton"
-        NEW_VERSION="${{ github.sha }}"
         TGZ_FILE="$CHART_DIR/pipeline-${NEW_VERSION}.tgz"
         SHA256=$(shasum -a 256 "$TGZ_FILE" | awk '{print $1}')
         echo "Digest for $TGZ_FILE: $SHA256"
@@ -70,7 +66,7 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: "v${{ github.sha }}"
+        tag_name: "v${NEW_VERSION}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -96,4 +92,4 @@ jobs:
     - name: Search Helm chart and verify version
       run: |
         helm search repo tekton-charts/pipeline
-        helm show chart tekton-charts/pipeline --version ${{ github.sha }}
+        helm show chart tekton-charts/pipeline --version ${{ steps.release.outputs.new_version }}
