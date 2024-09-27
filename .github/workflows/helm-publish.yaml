@@ -79,6 +79,7 @@ jobs:
         GH_PAGES_BRANCH="gh-pages"
         git fetch origin $GH_PAGES_BRANCH
         git checkout $GH_PAGES_BRANCH
+        git fetch origin ${{ github.head_ref }}:${{ github.head_ref }}
         git checkout "${{ github.head_ref }}" -- charts
         CHART_DIR="./charts/tekton"
         helm package $CHART_DIR --destination $CHART_DIR
