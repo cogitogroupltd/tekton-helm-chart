@@ -57,6 +57,7 @@ jobs:
     # Step 4: Package the Helm chart
     - name: Package Helm chart
       run: |
+        CHART_YAML_PATH="./charts/tekton/Chart.yaml"
         sed -i "s/^version:.*/version: $NEW_VERSION/" "$CHART_YAML_PATH"
         CHART_DIR="./charts/tekton"
         helm package $CHART_DIR --destination $CHART_DIR
@@ -86,7 +87,6 @@ jobs:
         else
           helm repo index . --url https://<username>.github.io/<repo>
         fi
-        CHART_YAML_PATH="./charts/tekton/Chart.yaml"
         git add pipeline-${NEW_VERSION}.tgz index.yaml charts/tekton/Chart.yaml
         git commit -m "Release Helm chart version $NEW_VERSION"
         git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
