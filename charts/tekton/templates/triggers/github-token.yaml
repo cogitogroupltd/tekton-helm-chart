@@ -1,0 +1,10 @@
+{{ if $.Values.github_token }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-token
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  token: {{ $.Values.github_token | b64enc }}
+{{ end }}

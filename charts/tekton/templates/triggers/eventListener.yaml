@@ -1,0 +1,75 @@
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: dev-listener
+  namespace: {{ $.Release.Namespace }}
+spec:
+  triggers:
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
+{{- with $value.trigger }}
+    - name: github-listener-{{ $value.name }}
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+          {{- if .token }}
+            - name: "secretRef"
+              value:
+                secretName: github-token
+                secretKey: token
+          {{- end }}
+            - name: "eventTypes"
+              value: {{ .eventTypes }}
+            - name: "overlays"
+              value:
+              - key: truncated_sha
+                expression: "body.pull_request.head.sha.truncate(7)"
+              - key: branch_name
+                expression: "body.ref"
+{{- range $eventType := .eventTypes }}
+{{- if eq $eventType "pull_request" }}
+{{- with $value.trigger }}
+        - name: "only when specified PR action detected"
+          ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.action in {{ .eventActions }} "
+{{- end }}
+{{- end }}
+{{- if eq $eventType "push" }}
+{{- with $value.trigger }}
+        - name: "only when push detected to specified branch"
+          ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value:  {{ printf "body.ref in  %s" (toJson .git_revisions) | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+      bindings:
+        - ref: {{ $value.name }}
+      template:
+        ref: {{ $value.name }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: "{{ include "generic.fullname" $ }}-tekton-triggers-sa"
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"

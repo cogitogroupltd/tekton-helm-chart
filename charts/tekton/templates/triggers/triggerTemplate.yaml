@@ -1,0 +1,101 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.deployment_namespace }}
+spec:
+  params:
+  - name: git_revision
+    description: The git revision
+  - name: git_revision_owner
+    description: The owner of the git revision
+  - name: git_repository_name
+    description: The name of the git repository
+  - name: git_branch_name
+    description: The name of the git repository
+  - name: url
+    description: The git repository url
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: {{ $value.name }}-$(uid)
+    spec:
+      {{ if $value.custom }}
+      {{- range $task := $value.custom.tasks -}}
+      taskRunSpecs:
+        - pipelineTaskName: {{ $task.name }}
+          taskServiceAccountName: {{ $task.name }}
+          taskPodTemplate:
+        {{ with $task.podTemplate}}
+{{ . | toYaml | indent 12}}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      pipelineRef:
+        name: {{ $value.name }}
+      serviceAccountNames:
+        {{ if $.Values.taskdefinitions.enabled }}
+        {{ range $task := $.Values.taskdefinitions.tasks }}
+        {{ if $task.serviceAccount }}
+        - taskName: {{ $task.name }} 
+          serviceAccountName: {{ $task.name }} 
+        {{ end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- if $value.custom -}}
+        {{- range $task := $value.custom.tasks }}
+        - taskName: {{ $task.name }}
+        {{ if $value.custom.serviceAccounts }} 
+          serviceAccountName: {{ $task.name }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if $value.custom -}}
+        {{- range $task := $value.custom.tasks }}
+        - taskName: {{ $task.name }}
+        {{ if $value.custom.serviceAccounts }} 
+          serviceAccountName: {{ $task.name }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      params:
+      - name: git_revision
+        value: $(tt.params.git_revision)
+      - name: git_revision_owner
+        value: $(tt.params.git_revision_owner)
+      - name: git_branch_name
+        value: $(tt.params.git_branch_name)
+      workspaces:
+        - name: git-pvc
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
+        - name: image-cache
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
+        - name: ssh-creds
+          secret:
+            secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_ssh_cred }}"
+        - name: docker-creds-cm
+          secret:
+            secretName: "{{ include "generic.fullname" $ }}-{{ $.Values.secret_docker_conf }}"
+        - name: kubeconfig
+          configMap:
+            name: "{{ include "generic.fullname" $ }}-{{ $.Values.configmap_kube_conf }}"
+---
+{{- end }}
+{{- end }}
+{{- end }}

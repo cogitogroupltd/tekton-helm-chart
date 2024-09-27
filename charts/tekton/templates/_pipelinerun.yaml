@@ -1,0 +1,39 @@
+# This is an example pipelinerun, fields will need updating depending on the settings of your values-override.yaml 
+
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: prod-
+  namespace: tekton-resources
+spec:
+  pipelineRef:
+    name: prod
+  params:
+  - name: git_revision
+    value: "v1.01"
+  workspaces:
+    - name: git-pvc
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: image-cache
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: ssh-creds
+      secret:
+        secretName: "pipelines-ssh-key"
+    - name: docker-creds-cm
+      secret:
+        secretName: "pipelines-docker-config"
+    - name: kubeconfig
+      configMap:
+        name: "pipelines-kube-config"

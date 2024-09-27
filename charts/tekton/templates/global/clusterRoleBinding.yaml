@@ -1,0 +1,60 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-clusteradmin"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ include "generic.fullname" $ }}-tekton-default-sa"
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{- range $taskcall := $value.taskcall }}
+{{ if $taskcall.admin }} 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $taskcall.name }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $taskcall.name }}"
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+---
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{ if $value.custom }}
+{{- range $task := $value.custom.tasks }}
+{{ if $task.clusterAdmin }} 
+{{- range $sa :=  $value.custom.serviceAccounts }}
+{{ with $sa.yaml }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ $.Release.Name }}-{{ $.Release.Namespace }}-{{ $task.name }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ $task.name }}"
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}
