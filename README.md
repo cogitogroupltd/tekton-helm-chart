@@ -112,6 +112,7 @@ See example [README.md](./examples/dind-ecr-build-deploy/README.md)
 ##  3. <a name='Todo'></a>Todo
 
 - [ ] Allow multiple installations of helm chart into same namespace; currently conflicts when task names are not unique
+- [ ] Add logic to automatically map workspace names to global.taskDefs
 - [ ] Remove hard coding in triggerTemplate by moving all built-in tasks to use an array same as calling a global custom task
 - [ ] Add docs on taskPodTemplate vs podTemplate whereby a taskPodTemplate overrides the podTemplate
 - [ ] Examples - Incorporate usage of eks.role.arn annotations to demonstrate easy utilisation of lease privilege
