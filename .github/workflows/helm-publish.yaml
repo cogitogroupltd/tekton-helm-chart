@@ -18,8 +18,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Extract version from pull request title or description
-    - name: Extract version from PR
+    # Step 2: Extract version from pull request title or description, fallback to Chart.yaml version
+    - name: Extract version from PR or Chart.yaml
       if: github.event_name == 'pull_request'
       id: extract_version
       run: |
@@ -32,11 +32,21 @@ jobs:
         elif [[ "$PR_BODY" =~ $VERSION_REGEX ]]; then
           NEW_VERSION="${BASH_REMATCH[0]}"
         else
-          echo "Version not found in PR title or description."
-          exit 1
+          # If no version found in PR, read the version from Chart.yaml and increment minor version
+          echo "Version not found in PR title or description, falling back to Chart.yaml version."
+          
+          # Extract version from Chart.yaml
+          CURRENT_VERSION=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
+          
+          # Increment the minor version (X.Y.Z -> X.(Y+1).0)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          MINOR=$((MINOR + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.0"
         fi
 
+        echo "Using version: $NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
 
     # Step 3: Set up Helm CLI
     - name: Set up Helm CLI
