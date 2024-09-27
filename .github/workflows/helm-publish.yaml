@@ -57,6 +57,7 @@ jobs:
     # Step 4: Package the Helm chart
     - name: Package Helm chart
       run: |
+        CHART_DIR="./charts/tekton"
         helm package $CHART_DIR --destination $CHART_DIR
       env:
         NEW_VERSION: ${{ env.NEW_VERSION }}
