@@ -54,13 +54,6 @@ jobs:
       with:
         version: v3.8.0
 
-    # Step 4: Package the Helm chart
-    - name: Package Helm chart
-      run: |
-        CHART_DIR="./charts/tekton"
-        helm package $CHART_DIR --destination $CHART_DIR
-      env:
-        NEW_VERSION: ${{ env.NEW_VERSION }}
 
     # Step 5: Generate the SHA256 digest for the new .tgz file
     - name: Generate SHA256 digest for .tgz file
