@@ -80,7 +80,11 @@ jobs:
         git fetch origin $GH_PAGES_BRANCH
         git checkout $GH_PAGES_BRANCH
         rm -fr ./charts/tekton/Chart.yaml
-        git stash pop
+        # Step 1: Apply the stash
+        git stash apply
+
+        # Step 2: Resolve conflicts (take changes from stash)
+        git checkout --theirs .
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
           helm repo index . --url https://<username>.github.io/<repo> --merge index.yaml
