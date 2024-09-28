@@ -1,0 +1,61 @@
+{{ if .Values.cleanup_cronjob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-tekton-cleanup
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "30 2 * * *"
+  startingDeadlineSeconds: 20
+  successfulJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      completions: 2
+      template:
+        spec:
+          serviceAccountName: "{{ .Release.Name }}-tekton-cleanup"
+          containers:
+          - name: main
+            image: bitnami/kubectl
+            command: ["sh", "-c"]
+            args: ["/configmap/runtimeConfig.sh"]
+            volumeMounts:
+            - name: configmap
+              mountPath: /configmap
+          restartPolicy: Never
+          volumes:
+            - name: configmap
+              configMap:
+                defaultMode: 0777
+                name: {{ .Release.Name }}-tekton-cleanup-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+  name: {{ .Release.Name }}-tekton-cleanup-cm
+  namespace: {{ .Release.Namespace }}
+data:
+  runtimeConfig.sh: |
+    kubectl get pvc -n {{ .Release.Namespace }} | awk '{print $1}' | xargs kubectl delete pvc -n {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ .Release.Name }}-{{ .Release.Namespace }}-cronjob-cleanup"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Release.Name }}-tekton-cleanup"
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-tekton-cleanup"
+  namespace: {{ .Release.Namespace }}
+---
+{{ end }}

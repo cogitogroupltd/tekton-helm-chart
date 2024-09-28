@@ -1,0 +1,104 @@
+{{ if $.Values.github_token }}
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: "{{ include "generic.fullname" . }}-create-webhook"
+  namespace: {{ .Release.Namespace }}
+spec:
+  volumes:
+  - name: github-secret
+    secret:
+      secretName: $(params.GitHubSecretName)
+  description: >
+    Creates a Github Webhook in a specified repository in order to send GitHub events to EventListeners.
+    Run this Task if Pipelines need to be automatically triggered by any event.
+  params:
+  - name: ExternalDomain
+    description: "The external domain for the EventListener e.g. `$(params.EventListenerName).<PROXYIP>.nip.io`"
+  - name: GitHubUser
+    description: "The GitHub user"
+  - name: GitHubRepo
+    description: "The GitHub repo where the webhook will be created"
+  - name: GitHubOrg
+    description: "The GitHub organization where the webhook will be created"
+  - name: GitHubSecretName
+    description: "The Secret name for GitHub access token. This is always mounted and must exist"
+  - name: GitHubAccessTokenKey
+    description: "The GitHub access token key name"
+  - name: GitHubSecretStringKey
+    description: "The GitHub secret string key name"
+  - name: GitHubDomain
+    description: "The GitHub domain. Override for GitHub Enterprise"
+    default: "github.com"
+  - name: WebhookEvents
+    description: "List of events the webhook will send notifications for"
+    default: '["push","pull_request"]'
+  steps:
+  - name: create-webhook
+    image: python:latest
+    volumeMounts:
+    - name: github-secret
+      mountPath: /var/secret
+    command:
+    - sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      echo "Creating Webhook"
+      pip install kubernetes
+      python3 - <<'EOF'
+      from kubernetes import client,config
+      import os
+      import base64
+      import requests
+      import json
+
+      # Authenticate with k8s cluster
+      config.load_incluster_config()
+
+      # Read Github token
+      with open('/var/secret/$(params.GitHubAccessTokenKey)', 'r') as file:
+        token = file.read().replace('\n', '')
+      
+      # create Github webhook and return id
+      Headers = { "Accept" : "application/vnd.github.v3+json", "Authorization": "token %s" % token}
+      data = '{"name": "web","active": true,"events": $(params.WebhookEvents) ,"config": {"url": "https://$(params.ExternalDomain)","content_type": "json","insecure_ssl": "1" }}'
+      if "$(params.GitHubDomain)" == "github.com":
+        x = requests.post('https://api.github.com/repos/$(params.GitHubOrg)/$(params.GitHubRepo)/hooks', data=data, headers=Headers)
+      print(x.text)
+      json_response=json.loads(x.text)
+      webhook_id=str(json_response['id'])
+      # Encode Hook ID as base64 to save in configMap
+      urlSafeEncodedBytes = base64.urlsafe_b64encode(webhook_id.encode("utf-8"))
+      urlSafeEncodedStr = str(urlSafeEncodedBytes, "utf-8")
+
+      # Create ConfigMap containing ID for the delete-webhook job
+      api_instance = client.CoreV1Api()
+      delete=False
+      try:
+          api_response = api_instance.list_namespaced_config_map(namespace="{{ .Release.Namespace }}", label_selector='metadata.name={{ include "generic.fullname" . }}-create-webhook',timeout_seconds="2")
+          print(len(api_response.items))
+          if len(api_response.items) == 1 :
+            delete=True
+          # print(api_response)
+      except Exception as e:
+          print("No configMap found, creating {{ include "generic.fullname" . }} to store Webhook ID")
+      if delete:
+        api_response = api_instance.delete_namespaced_config_map(name="{{ include "generic.fullname" . }}-create-webhook", namespace="{{ .Release.Namespace }}")  
+      api_instance.create_namespaced_config_map(
+          body=client.V1ConfigMap(
+              metadata=client.V1ObjectMeta(
+                  name="{{ include "generic.fullname" . }}-create-webhook",
+                  namespace="{{ .Release.Namespace }}"
+              ),
+              data={
+                  "id": urlSafeEncodedStr
+              }
+          ),
+          namespace="{{ .Release.Namespace }}"
+      )
+      print("Created configMap {{ include "generic.fullname" . }} with Webhook id=%s" % webhook_id)
+      EOF
+{{ end }}
