@@ -3,9 +3,9 @@ entries:
   pipeline:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-09-28T21:30:47.856095202Z"
+    created: "2024-09-28T23:32:22.089210702Z"
     description: Helm chart to deploy Tekton pipeline resources
-    digest: 87480303f22ecb8ddf4f1293056eed59f4c764c7a7215184be246728f491c1eb
+    digest: c9274fb06174756cfe5352aca75275519ffec3c6dde115b44981c1c4ba4376c9
     name: pipeline
     type: application
     urls:
@@ -13,7 +13,7 @@ entries:
     version: 0.5.2
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-09-28T21:30:47.854347953Z"
+    created: "2024-09-28T23:32:22.08827009Z"
     description: Helm chart to deploy Tekton pipeline resources
     digest: dd763eed6ca655df87cca7cab2115b3edc922607af7b411ff1621fd1197c488e
     name: pipeline
@@ -21,4 +21,4 @@ entries:
     urls:
     - https://cogitogrouptld.github.io/tekton-helm-chart/pipeline-0.5.1.tgz
     version: 0.5.1
-generated: "2024-09-28T21:30:47.85213658Z"
+generated: "2024-09-28T23:32:22.086153027Z"
