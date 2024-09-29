@@ -4,10 +4,78 @@ on:
   push:
     branches:
       - main
+      - feature/cicd*
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+  
+    steps:
+
+    # Step 0: Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Step 1: Set up Helm CLI
+    - name: Set up Helm CLI
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.8.0
+
+    # Step 2: Install Kind (Kubernetes in Docker)
+    - name: Install Kind
+      run: |
+        curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64
+        chmod +x ./kind
+        sudo mv ./kind /usr/local/bin/kind
+
+    # Step 3: Create a Kind cluster
+    - name: Create Kind cluster
+      run: |
+        kind create cluster --name tekton-test
+
+    # Step 4: Install Tekton CRDs (optional, based on your setup)
+    - name: Install Tekton CRDs
+      run: |
+        kind get kubeconfig --name tekton-test > kubeconfig
+        kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+        # Install trigger CRDs
+        curl https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml | kubectl apply --filename -
+        curl https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml | kubectl apply --filename -
+
+      env: 
+        KUBECONFIG: kubeconfig
+
+    # Step 5: Lint Helm chart
+    - name: Lint Helm chart
+      run: |
+        helm lint ./charts/tekton
+
+    # Step 6: Validate Helm chart syntax
+    - name: Validate Helm chart syntax
+      run: |
+        helm template ./charts/tekton --debug
+
+    # Step 7: Dry-run helm upgrade against the Kind cluster (simulating Tekton CRDs)
+    - name: Helm upgrade dry-run against Tekton CRDs
+      run: |
+        
+        helm upgrade --install tekton-pipeline ./charts/tekton \
+          --namespace tekton-pipelines \
+          --create-namespace \
+          --dry-run \
+          --set version=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
+      env: 
+        KUBECONFIG: kubeconfig
+
+    # Step 8: Delete Kind cluster after test
+    - name: Delete Kind cluster
+      run: |
+        kind delete cluster --name tekton-test
+  
   release:
     runs-on: ubuntu-latest
+    needs: test
     outputs:
       new_version: ${{ steps.extract_version.outputs.new_version }}
     steps:
@@ -32,7 +100,7 @@ jobs:
       uses: azure/setup-helm@v1
       with:
         version: v3.8.0
-
+  
     # Step 4: Package the Helm chart
     - name: Package Helm chart
       run: |
