@@ -1,0 +1,21 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+{{- if $value.trigger }}
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: Trigger
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace}}
+spec:
+  interceptors:
+    - ref:
+        name: "cel"
+  bindings:
+  - ref: {{ $value.name }}
+  template:
+    ref: {{ $value.name }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+

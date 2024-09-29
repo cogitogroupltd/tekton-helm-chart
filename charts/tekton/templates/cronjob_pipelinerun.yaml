@@ -1,0 +1,86 @@
+{{ if .Values.cronjob_pipelineRun.enabled }}
+{{- range .Values.cronjob_pipelineRun.list }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "tekton-pipelinerun-cronjob-{{ .pipeline_run_name  }}"
+  namespace: {{ $.Release.Namespace }}
+spec:
+  schedule: "{{ .schedule }}"
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      completions: 1
+      template:
+        spec:
+          serviceAccountName: "cronjob-tekton-pipelines-cronjob"
+          containers:
+          - name: partition-reassignment
+            image: cogitoexample/cicd-agent:0.02
+            env:
+              - name: URL
+                value: "{{ .github_pipelines_repo }}"
+              - name: PIPELINE_RUN
+                value: "{{ .pipeline_run_name }}"
+              - name: PIPELINE_RUN_DIR
+                value: "{{ .pipeline_run_dir }}"
+              - name: SSH_KEY_NAME
+                value: "{{ .secret_ssh_cred_key }}"
+            command:
+            - bash
+            args: 
+            - "-c"
+            - "-x"
+            - |
+              cp /root/.ssh/${SSH_KEY_NAME} /tmp/${SSH_KEY_NAME};
+              chmod 400 /tmp/${SSH_KEY_NAME};
+              ls -l /tmp/${SSH_KEY_NAME};
+              export GIT_SSH_COMMAND="ssh -i /tmp/${SSH_KEY_NAME} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes";
+              git clone ${URL} /tmp/repo;
+              kubectl create -f "/tmp/repo/yaml/${PIPELINE_RUN_DIR}/${PIPELINE_RUN}.yaml";
+            volumeMounts:
+            - name: ssh-volume
+              mountPath: /root/.ssh
+          restartPolicy: Never
+          volumes:
+            - name: ssh-volume
+              secret:
+                secretName: "{{ .secret_ssh_cred }}"
+                defaultMode: 0644
+
+{{- end }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ .Release.Name }}-{{ .Release.Namespace }}-cronjob"
+subjects:
+  - kind: ServiceAccount
+    name: "cronjob-tekton-pipelines-cronjob"
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ .Release.Name }}-{{ .Release.Namespace }}-deploy-cronjob"
+subjects:
+  - kind: ServiceAccount
+    name: cronjob-tekton-pipelines-cronjob 
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "cronjob-tekton-pipelines-cronjob"
+  namespace: {{ $.Release.Namespace }}
+{{ end }}

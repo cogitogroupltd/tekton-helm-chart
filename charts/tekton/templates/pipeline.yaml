@@ -1,0 +1,76 @@
+{{- if .Values.pipelines }}
+{{- range $value := .Values.pipelines }}
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: {{ $value.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  params:
+{{ with $value.params }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
+  workspaces:
+{{ with $value.workspaces }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
+  results:
+{{ with $value.results }}
+{{ . | toYaml | nindent 4 }}
+{{ end }}
+  tasks:
+# Custom Tasks
+{{ if $value.custom }}
+{{- range $task := $value.custom.tasks }}
+    - name: {{ $task.name }}
+      taskRef:
+        name: {{ $task.taskRef.name }}
+{{- if $task.runAfter }}
+      runAfter: {{ $task.runAfter }}
+{{- end }}
+{{ if $task.params }}
+      params:
+{{- with $task.params -}}
+{{ $yaml := . }}
+{{- range $line := $yaml }}
+{{- range $key, $v := $line -}}
+{{ if eq $key "name" }}
+      - {{ $key }}: {{ $v }}
+{{- end -}}
+{{ if eq $key "value" }}
+        {{ $key }}: {{ $v | quote}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+# / Custom Tasks
+# Global task calling
+{{ if $value.taskcall }}
+{{- range $taskcall := $value.taskcall }}
+    - name: {{ $taskcall.name }}
+      taskRef:
+        name: {{ $taskcall.taskRef.name }}
+{{- if $taskcall.runAfter }}
+      runAfter: {{ $taskcall.runAfter }}
+{{- end }}
+{{- if $taskcall.workspaces -}}
+{{- with $taskcall.workspaces }}
+      workspaces:
+{{ . | toYaml | nindent 6}}
+{{- end }}
+{{- end }}
+{{ if $taskcall.params }}
+      params:
+{{- with $taskcall.params -}}
+{{ . | toYaml | nindent 6}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+# / Global Task calling
+---
+{{- end }}
+{{- end -}}
