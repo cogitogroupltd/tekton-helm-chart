@@ -9,8 +9,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+  
     steps:
+
+    # Step 0: Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     # Step 1: Set up Helm CLI
     - name: Set up Helm CLI
       uses: azure/setup-helm@v1
@@ -33,7 +38,11 @@ jobs:
     - name: Install Tekton CRDs
       run: |
         kind get kubeconfig --name tekton-test > kubeconfig
-        kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+        kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+        # Install trigger CRDs
+        curl https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml | kubectl apply --filename -
+        curl https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml | kubectl apply --filename -
+
       env: 
         KUBECONFIG: kubeconfig
 
@@ -66,6 +75,7 @@ jobs:
   
   release:
     runs-on: ubuntu-latest
+    needs: test
     outputs:
       new_version: ${{ steps.extract_version.outputs.new_version }}
     steps:
