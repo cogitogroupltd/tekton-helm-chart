@@ -64,9 +64,9 @@ jobs:
         ls $TGZ_FILE
         mv "$TGZ_FILE" .
         if [ -f index.yaml ]; then
-          helm repo index . --url https://cogitogrouptld.github.io/tekton-helm-chart --merge index.yaml
+          helm repo index . --url https://cogitogroupltd.github.io/tekton-helm-chart --merge index.yaml
         else
-          helm repo index . --url https://cogitogrouptld.github.io/tekton-helm-chart
+          helm repo index . --url https://cogitogroupltd.github.io/tekton-helm-chart
         fi
         CHART_YAML_PATH="./charts/tekton/Chart.yaml"
         git config --global user.email "actions@github.com"
