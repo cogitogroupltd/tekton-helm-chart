@@ -63,7 +63,6 @@ jobs:
         helm upgrade --install tekton-pipeline ./charts/tekton \
           --namespace tekton-pipelines \
           --create-namespace \
-          --dry-run \
           --set version=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
       env: 
         KUBECONFIG: kubeconfig
