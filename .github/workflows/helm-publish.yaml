@@ -60,10 +60,48 @@ jobs:
     - name: Helm upgrade dry-run against Tekton CRDs
       run: |
         
-        helm upgrade --install tekton-pipeline ./charts/tekton \
-          --namespace tekton-pipelines \
-          --create-namespace \
-          --set version=$(grep '^version:' ./charts/tekton/Chart.yaml | sed 's/version: //')
+        # Base directory where examples folders are located
+        BASE_DIR="./examples"
+
+        # Chart directory
+        CHART_DIR="./charts/tekton"
+
+        # Get the chart version from the Chart.yaml file
+        CHART_VERSION=$(grep '^version:' ${CHART_DIR}/Chart.yaml | sed 's/version: //')
+
+        # Namespace to install into
+        NAMESPACE="tekton-pipelines"
+
+        # Iterate over each subdirectory in examples
+        for EXAMPLE_DIR in ${BASE_DIR}/*/; do
+          # Check if values-override.yaml exists in the subdirectory
+          OVERRIDE_FILE="${EXAMPLE_DIR}values-override.yaml"
+          
+          if [[ -f "$OVERRIDE_FILE" ]]; then
+            # Extract the example name for the Helm release name
+            EXAMPLE_NAME=$(basename "$EXAMPLE_DIR")
+            
+            echo "Running Helm dry-run for example: $EXAMPLE_NAME"
+            
+            # Run the Helm upgrade dry-run with the values-override.yaml file
+            helm upgrade --install "${EXAMPLE_NAME}-pipeline" ${CHART_DIR} \
+              --namespace ${NAMESPACE} \
+              --create-namespace \
+              --dry-run \
+              --set version=${CHART_VERSION} \
+              -f ${OVERRIDE_FILE}
+
+            # Check if the last command was successful
+            if [[ $? -ne 0 ]]; then
+              echo "Helm dry-run failed for example: $EXAMPLE_NAME"
+            else
+              echo "Helm dry-run succeeded for example: $EXAMPLE_NAME"
+            fi
+          else
+            echo "No values-override.yaml found for example: $EXAMPLE_DIR, skipping..."
+          fi
+        done
+
       env: 
         KUBECONFIG: kubeconfig
 
