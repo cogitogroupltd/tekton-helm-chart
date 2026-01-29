@@ -3,17 +3,40 @@ entries:
   pipeline:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-09-30T05:02:02.859489053Z"
-    description: Helm chart to deploy Tekton pipeline resources
-    digest: f72a7d4811a4090d8e75620a491749fd1c63b20aa608df4d98fa3b6c50db6bd1
+    created: "2026-01-29T11:09:39.768355227Z"
+    description: Tekton Helm Chart - Production-ready Kubernetes CI/CD pipelines for
+      Tekton with webhook automation, least-privilege security, and multi-platform
+      support
+    digest: adf357b26a16c8cbc56d3fbe5308e93fa2e55c33e19fe9d9e37b109d97f05784
+    home: https://github.com/cogitogroupltd/tekton-helm-chart
+    keywords:
+    - tekton
+    - tekton-pipelines
+    - ci-cd
+    - kubernetes
+    - continuous-integration
+    - continuous-deployment
+    - devops
+    - pipelines
+    - helm-chart
+    - kaniko
+    - buildah
+    - github-webhooks
+    - kubernetes-ci
+    maintainers:
+    - name: Cogito Group Ltd
+      url: https://cogitogroup.co.uk
     name: pipeline
+    sources:
+    - https://github.com/cogitogroupltd/tekton-helm-chart
+    - https://tekton.dev
     type: application
     urls:
     - https://cogitogroupltd.github.io/tekton-helm-chart/pipeline-0.5.2.tgz
     version: 0.5.2
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-09-30T05:02:02.858285265Z"
+    created: "2026-01-29T11:09:39.767041843Z"
     description: Helm chart to deploy Tekton pipeline resources
     digest: dd763eed6ca655df87cca7cab2115b3edc922607af7b411ff1621fd1197c488e
     name: pipeline
@@ -21,4 +44,4 @@ entries:
     urls:
     - https://cogitogroupltd.github.io/tekton-helm-chart/pipeline-0.5.1.tgz
     version: 0.5.1
-generated: "2024-09-30T05:02:02.856394892Z"
+generated: "2026-01-29T11:09:39.765508216Z"
