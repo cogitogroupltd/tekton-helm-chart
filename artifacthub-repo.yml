@@ -1,0 +1,21 @@
+# Artifact Hub repository metadata file
+# https://github.com/artifacthub/hub/blob/master/docs/metadata/artifacthub-repo.yml
+repositoryID: tekton-helm-chart-cogito
+owners:
+  - name: Cogito Group Ltd
+    email: info@cogitogroup.co.uk
+
+# Repository display name
+displayName: Tekton Helm Chart by Cogito Group
+
+# URL of the logo image
+# logoURL: https://cogitogroup.co.uk/logo.png
+
+# Links
+links:
+  - name: support
+    url: https://github.com/cogitogroupltd/tekton-helm-chart/issues
+  - name: Documentation
+    url: https://github.com/cogitogroupltd/tekton-helm-chart/tree/main/docs
+  - name: Examples
+    url: https://github.com/cogitogroupltd/tekton-helm-chart/tree/main/examples

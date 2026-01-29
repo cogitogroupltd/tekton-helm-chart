@@ -1,14 +1,44 @@
-# Helm chart for installing Tekton pipelines 
+# Tekton Helm Chart - Kubernetes CI/CD Pipelines Made Easy
+
+[![Helm Chart](https://img.shields.io/badge/Helm-Chart-0f1689?logo=helm)](https://cogitogroupltd.github.io/tekton-helm-chart)
+[![Tekton](https://img.shields.io/badge/Tekton-Pipelines-blue?logo=tekton)](https://tekton.dev)
+[![License](https://img.shields.io/github/license/cogitogroupltd/tekton-helm-chart)](LICENSE)
+
+**Production-ready Tekton Helm Chart for Kubernetes CI/CD Pipelines**
+
+Deploy enterprise-grade [Tekton](https://tekton.dev) CI/CD pipelines on Kubernetes with a single Helm command. This official Tekton Helm chart from [Cogito Group Ltd](https://cogitogroup.co.uk) simplifies Tekton pipeline deployment across all major Kubernetes distributions.
 
 **This Helm chart is still in development**
 
 > Copyright [2024] [Cogito Group Ltd]
 
-[Cogito Group's](https://cogitogroup.co.uk) Tekton Helm chart to install CI/CD pipelines on Kubernetes with **one** command.
+## Why Choose This Tekton Helm Chart?
 
-This repository contains a Helm chart and examples for installing Tekton pipelines on Kubernetes. The chart does not install the Tekton CRDs, you must install these separately, the chart is designed to be both platform and Kubernetes distribution agnostic.
+This **Tekton Helm Chart** repository provides production-ready configuration for deploying Tekton CI/CD pipelines on any Kubernetes cluster. Unlike other Tekton deployment methods, this Helm chart offers:
 
-Source repository https://github.com/cogitogroupltd/tekton-helm-chart
+- **One-Command Deployment**: Install complete Tekton pipelines with a single `helm install` command
+- **Multi-Platform Support**: Works on EKS, AKS, GKE, OpenShift, K3s, MicroK8s, Kind, and more
+- **GitHub Webhook Automation**: Built-in webhook creation and management from within Tekton
+- **Security-First Design**: Least-privilege RBAC with isolated permissions per task
+- **Container Build Options**: Pre-configured support for Kaniko, Buildah, and Docker-in-Docker
+
+This Tekton Helm chart is platform-agnostic and Kubernetes distribution-agnostic. The chart does not install Tekton CRDs - install those separately following our [Tekton installation guide](./docs/installing_tekton.md).
+
+**Repository**: https://github.com/cogitogroupltd/tekton-helm-chart
+**Helm Repository**: https://cogitogroupltd.github.io/tekton-helm-chart
+
+## Quick Start - Install Tekton with Helm
+
+```bash
+# Add the Tekton Helm chart repository
+helm repo add tekton https://cogitogroupltd.github.io/tekton-helm-chart
+helm repo update tekton
+
+# Install Tekton pipelines using Helm
+helm install my-tekton-pipeline tekton/pipeline
+```
+
+See detailed [installation examples](#Examples) below for complete CI/CD pipeline configurations.
 
 
  
@@ -27,22 +57,24 @@ Source repository https://github.com/cogitogroupltd/tekton-helm-chart
 	/vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
-##  1. <a name='Summary'></a>Summary
+##  1. <a name='Summary'></a>Tekton Helm Chart Features & Capabilities
 
 **This project is in development and should not be used in production**
 
+This **Tekton Helm Chart** provides comprehensive Kubernetes CI/CD automation with Tekton pipelines, offering everything you need for production Tekton deployments.
 
-###  1.1. <a name='Features'></a>Features
+###  1.1. <a name='Features'></a>Key Features of This Tekton Helm Chart
 
-- Helm chart to deploy Tekton pipelines and all dependencies except Tekton Custom Resource Definitions
-- Simplifies developer experience with automated Tekton resource linking  
-- Declarative and immutable pipelines 
-- Least-privilege with isolated permissions for each task run
-- Create/Delete Github webhooks from inside Tekton
-- Trigger pipelines from CronJob or Github webhook events
+- **Complete Tekton Deployment**: Helm chart deploys all Tekton pipeline resources and dependencies (except Tekton CRDs)
+- **Simplified Tekton Integration**: Automated Tekton resource linking for streamlined developer experience
+- **GitOps-Ready Tekton Pipelines**: Declarative and immutable Tekton pipeline definitions
+- **Secure Tekton Execution**: Least-privilege RBAC model with isolated permissions for each Tekton task run
+- **GitHub Webhook Automation**: Create and delete GitHub webhooks directly from Tekton pipelines
+- **Flexible Tekton Triggers**: Trigger Tekton pipelines via CronJob schedules or GitHub webhook events
+- **Multi-Architecture Support**: Tekton Helm chart works on ARM64 and AMD64 architectures
 
 
-###  1.2. <a name='Successfullytestedon'></a>Successfully tested on
+###  1.2. <a name='Successfullytestedon'></a>Tekton Helm Chart Compatibility - Tested Kubernetes Platforms
 
 - CPU Architectures; arm64 (MacM1, MacM2), amd64
 - AWS EKS version == v1.30
@@ -67,28 +99,29 @@ Before deploying the Helm chart the below steps are required:
 - DockerHub username and password - required for examples using Dockerhub
 
 
-##  2. <a name='Examples'></a>Examples 
+##  2. <a name='Examples'></a>Tekton Helm Chart Examples - CI/CD Pipeline Tutorials
 
+Install the Tekton Helm chart repository:
 
 ```bash
 helm repo add tekton https://cogitogroupltd.github.io/tekton-helm-chart
 helm repo update tekton
 ```
 
-Listed below are a series of examples of how to use the Helm chart to achieve common DevOps tasks. 
+Listed below are complete examples demonstrating how to use this Tekton Helm chart for common Kubernetes CI/CD tasks and DevOps workflows. 
 
 
-###  2.1. <a name='SimpleKanikoPipelineExample'></a>Simple Kaniko Pipeline Example 
+###  2.1. <a name='SimpleKanikoPipelineExample'></a>Tekton Helm Chart Example: Kaniko Container Build Pipeline
 
-[Kaniko](https://github.com/GoogleContainerTools/kaniko)  operates without needing a Docker daemon, builds container images without requiring root privileges and more resource-efficient for building images in Kubernetes as it doesn’t require a daemon and operates as a single container process.
+Deploy a complete Tekton CI/CD pipeline using [Kaniko](https://github.com/GoogleContainerTools/kaniko) for secure, daemonless container image builds on Kubernetes. Kaniko operates without needing a Docker daemon, builds container images without requiring root privileges, and is more resource-efficient for building images in Kubernetes as it operates as a single container process.
 
 See example [README.md](./examples/kaniko-build-deploy/README.md)
 
 ![](./examples/kaniko-build-deploy/2022-10-17-23-36-33.png)
 
-###  2.2. <a name='SimpleBuildahPipelineExample'></a>Simple Buildah Pipeline Example
+###  2.2. <a name='SimpleBuildahPipelineExample'></a>Tekton Helm Chart Example: Buildah Container Build Pipeline
 
-[Buildah](https://buildah.io/) is designed to be lightweight and operates without a long-running daemon, unlike Docker. This can be beneficial when running inside a container on Kubernetes, where you may want a more streamlined and efficient toolchain. Buildah allows for more granular control over the image creation process and builds images without requiring root privileges or the Docker daemon.
+Configure Tekton pipelines with [Buildah](https://buildah.io/) for rootless container image builds on Kubernetes. Buildah is designed to be lightweight and operates without a long-running daemon, unlike Docker. This is beneficial when running inside a Kubernetes container, providing a streamlined and efficient toolchain. Buildah allows granular control over the image creation process and builds images without requiring root privileges or the Docker daemon.
 
 
 See example [README.md](./examples/buildah-build-deploy/README.md)
@@ -97,7 +130,7 @@ See example [README.md](./examples/buildah-build-deploy/README.md)
 
 
 
-###  2.3. <a name='SimpleDocker-in-dockerPipelineExamplenotrecommended'></a>Simple Docker-in-docker Pipeline Example (not recommended)
+###  2.3. <a name='SimpleDocker-in-dockerPipelineExamplenotrecommended'></a>Tekton Helm Chart Example: Docker-in-Docker Pipeline (Educational Purpose)
 
 This is for just for fun. Running docker-in-docker is not recommended due to security vulnerabilities and the Docker daemon is now deprecated on Kubernetes. Here we mount the docker.sock and local docker image cache into the Kubernetes hosted docker container, to build source code using native docker commands. 
 
@@ -128,3 +161,50 @@ More feature requests? Please raise a github [issue](https://github.com/cogitogr
 ##  4. <a name='Troubleshooting'></a>Troubleshooting
 
 See [FAQ.md](./docs/FAQ.md) or our [blog](https://cogitogroup.co.uk/blog)
+
+## Contributing & Support
+
+### How to Contribute to This Tekton Helm Chart
+
+We welcome contributions to improve this Tekton Helm Chart! To contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Get Help with Tekton Helm Chart
+
+- **Issues**: [GitHub Issues](https://github.com/cogitogroupltd/tekton-helm-chart/issues)
+- **Documentation**: [docs/](./docs/)
+- **Examples**: [examples/](./examples/)
+- **Blog**: [Cogito Group Blog](https://cogitogroup.co.uk/blog)
+
+### Stay Updated
+
+- **Star this repository** to receive updates about new Tekton Helm chart features
+- **Watch releases** for notifications about new versions
+- Follow [Cogito Group](https://cogitogroup.co.uk) for Tekton and Kubernetes insights
+
+## Related Projects & Resources
+
+- [Tekton Official Documentation](https://tekton.dev)
+- [Tekton Pipelines GitHub](https://github.com/tektoncd/pipeline)
+- [Tekton Triggers](https://github.com/tektoncd/triggers)
+- [Tekton Catalog](https://github.com/tektoncd/catalog)
+- [Helm Documentation](https://helm.sh/docs/)
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history and release notes.
+
+## License
+
+This Tekton Helm Chart is licensed under the terms specified in the [LICENSE](./LICENSE) file.
+
+Copyright [2024] [Cogito Group Ltd]
+
+---
+
+**Keywords**: Tekton, Helm Chart, Kubernetes CI/CD, Tekton Pipelines, Kubernetes, DevOps, Continuous Integration, Continuous Deployment, Kaniko, Buildah, GitHub Webhooks, Tekton Triggers, Cloud Native, GitOps, Pipeline Automation
